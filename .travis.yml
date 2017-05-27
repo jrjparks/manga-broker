@@ -1,0 +1,28 @@
+language: node_js
+node_js:
+  - "7"
+script:
+  - npm test
+after_script:
+- npm run coverage
+cache:
+  directories:
+    - node_modules
+jobs:
+  include:
+    - deploy: Release
+      node_js: "7"
+      script: npm run build
+      deploy:
+        - provider: releases
+          api_key: $GITHUB_OAUTH_TOKEN
+          skip_cleanup: true
+          on:
+            branch: master
+            tags: true
+        - provider: npm
+          api_key: $NPM_API_KEY
+          skip_cleanup: true
+          on:
+            branch: master
+            tags: true

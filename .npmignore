@@ -1,6 +1,9 @@
-lib/**/*.js
-test/**/*.js
-*.map
+test
+.npmignore
+.gitignore
+.nycrc
+.travis.yml
+gulpfile.js
 
 # Node.JS Template
 # Logs
