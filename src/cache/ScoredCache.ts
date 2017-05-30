@@ -1,6 +1,6 @@
 import _ = require("lodash");
 import { StringUtil } from "../util/string";
-import { Cache, ICacheResult } from "./cache";
+import { Cache, ICacheResult } from "./Cache";
 
 export interface ICacheScoredResult<T> extends ICacheResult<T> {
   score: number;
