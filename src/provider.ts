@@ -1,0 +1,30 @@
+import { CloudKicker } from "cloudkicker";
+import { URL } from "url";
+import { ScoredCache } from "./cache/ScoredCache";
+import { IChapter, IDetails, ISearchOptions, ISearchResults, ISource } from "./models";
+
+export interface IProvider {
+  readonly is: string;
+  readonly baseURL: URL;
+    search(title: string, options?: ISearchOptions): Promise<ISearchResults>;
+      details(source: ISource): Promise<IDetails>;
+}
+
+export interface ISourceProvider extends IProvider {
+  chapters(source: ISource): Promise<IChapter[]>;
+  pages(source: ISource): Promise<ISource[]>;
+}
+
+export interface IAuthentableProvider extends IProvider {
+  authenticate(username: string, password: string): Promise<IAuthentableProvider>;
+}
+
+export class ProviderCore {
+  protected readonly cloudkicker: CloudKicker;
+  protected readonly searchCache: ScoredCache<ISource> = new ScoredCache<ISource>();
+
+  // this constructor is really only used for testing
+  constructor(cloudkicker?: CloudKicker) {
+    this.cloudkicker = cloudkicker || new CloudKicker();
+  }
+}
