@@ -37,7 +37,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
           results: [value],
         } as ISearchResults;
       })
-      .catch(() => this.cloudkicker.get(queryURL.href)
+      .catch(() => this.cloudkicker.get(queryURL)
         .then(({response}) => {
           const $ = cheerio.load(response.body);
 
@@ -99,7 +99,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
     }
-    return this.cloudkicker.get(source.source.href)
+    return this.cloudkicker.get(source.source)
       .then(({response}) => {
         const $ = cheerio.load(response.body);
         // const parseLink = (node: any, param: string): ISource | undefined => {

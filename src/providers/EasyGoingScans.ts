@@ -34,7 +34,7 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
     }
-    return this.cloudkicker.get(source.source.toString())
+    return this.cloudkicker.get(source.source)
       .then(({response}) => {
         const $ = cheerio.load(response.body);
         const selector = [
@@ -65,7 +65,7 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
       return Promise.reject(new Error("The passed source was not for this provider."));
     }
     source.source.searchParams.set("display", "webtoon");
-    return this.cloudkicker.get(source.source.toString())
+    return this.cloudkicker.get(source.source)
       .then(({response}) => {
         const $ = cheerio.load(response.body);
         const selector = [

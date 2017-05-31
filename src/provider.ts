@@ -6,8 +6,8 @@ import { IChapter, IDetails, ISearchOptions, ISearchResults, ISource } from "./m
 export interface IProvider {
   readonly is: string;
   readonly baseURL: URL;
-    search(title: string, options?: ISearchOptions): Promise<ISearchResults>;
-      details(source: ISource): Promise<IDetails>;
+  search(title: string, options?: ISearchOptions): Promise<ISearchResults>;
+  details(source: ISource): Promise<IDetails>;
 }
 
 export interface ISourceProvider extends IProvider {
@@ -24,7 +24,11 @@ export class ProviderCore {
   protected readonly searchCache: ScoredCache<ISource> = new ScoredCache<ISource>();
 
   // this constructor is really only used for testing
-  constructor(cloudkicker?: CloudKicker) {
+  constructor(cloudkicker ?: CloudKicker) {
     this.cloudkicker = cloudkicker || new CloudKicker();
+  }
+
+  public clearCache(): void {
+    this.searchCache.clear();
   }
 }
