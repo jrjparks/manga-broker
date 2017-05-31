@@ -10,7 +10,9 @@
   "scripts": {
     "build": "gulp rebuild:ts",
     "test": "nyc mocha",
-    "coverage": "nyc report --reporter=text-lcov | coveralls"
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "preversion": "npm test",
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
@@ -53,7 +55,7 @@
     "@types/cheerio": "^0.22.1",
     "@types/lodash": "^4.14.64",
     "cheerio": "^0.22.0",
-    "cloudkicker": "^0.1.1",
+    "cloudkicker": "^1.0.0",
     "lodash": "^4.17.4"
   }
 }
