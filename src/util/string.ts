@@ -35,4 +35,8 @@ export class StringUtil extends String {
       return (bLength - levenshtein(b, a)) / bLength;
     }
   }
+
+  public static escapeRegExp(value: string) {
+    return value.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+  }
 }
