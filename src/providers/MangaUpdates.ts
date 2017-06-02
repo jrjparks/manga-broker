@@ -98,92 +98,93 @@ export class MangaUpdates extends ProviderCore implements IProvider {
   public details(source: ISource): Promise<IDetails> {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
-    }
-    return this.cloudkicker.get(source.source)
-      .then(({response}) => {
-        const $ = cheerio.load(response.body);
-        // const parseLink = (node: any, param: string): ISource | undefined => {
-        const parseLink = (node: CheerioElement): ISource | undefined => {
-          const element = $(node);
-          if (element.length !== 1) {
-            return undefined;
-          } else {
-            const name = element.text().trim();
-            const href = element.attr("href");
-            if (href.includes("javascript:")) {
+    } else {
+      return this.cloudkicker.get(source.source)
+        .then(({response}) => {
+          const $ = cheerio.load(response.body);
+          // const parseLink = (node: any, param: string): ISource | undefined => {
+          const parseLink = (node: CheerioElement): ISource | undefined => {
+            const element = $(node);
+            if (element.length !== 1) {
               return undefined;
             } else {
-              const location: URL = new URL(href.includes("://") ? href : `${this.baseURL}/${href}`);
-              // const value: string | null = location.searchParams.get(param);
-              return {
-                name: (name),
-                source: (location),
-              };
+              const name = element.text().trim();
+              const href = element.attr("href");
+              if (href.includes("javascript:")) {
+                return undefined;
+              } else {
+                const location: URL = new URL(href.includes("://") ? href : `${this.baseURL}/${href}`);
+                // const value: string | null = location.searchParams.get(param);
+                return {
+                  name: (name),
+                  source: (location),
+                };
+              }
             }
-          }
-        };
-        const parseLinkBind: (node: CheerioElement) => ISource | undefined = parseLink.bind(this);
+          };
+          const parseLinkBind: (node: CheerioElement) => ISource | undefined = parseLink.bind(this);
 
-        // Series Content Node
-        const contentNode = $("#main_content > table.series_content_table > tr > td > div:nth-child(1)");
+          // Series Content Node
+          const contentNode = $("#main_content > table.series_content_table > tr > td > div:nth-child(1)");
 
-        // Type
-        const typeNode = contentNode.find("div:nth-child(3) > div > div:nth-child(5)");
-        const typeKey: keyof typeof Type = typeNode.text().trim() as keyof typeof Type;
-        const type: Type = Type[typeKey];
+          // Type
+          const typeNode = contentNode.find("div:nth-child(3) > div > div:nth-child(5)");
+          const typeKey: keyof typeof Type = typeNode.text().trim() as keyof typeof Type;
+          const type: Type = Type[typeKey];
 
-        // Name
-        const nameNode = contentNode.find("div:nth-child(1) > span.releasestitle.tabletitle");
-        const name = nameNode.text().trim();
+          // Name
+          const nameNode = contentNode.find("div:nth-child(1) > span.releasestitle.tabletitle");
+          const name = nameNode.text().trim();
 
-        // Description
-        const descriptionNode = contentNode.find("div:nth-child(3) > div > div:nth-child(2)");
-        const description = descriptionNode.text().trim();
+          // Description
+          const descriptionNode = contentNode.find("div:nth-child(3) > div > div:nth-child(2)");
+          const description = descriptionNode.text().trim();
 
-        // Cover
-        const coverNode = contentNode.find("div:nth-child(4) > div > div:nth-child(2) > center > img");
-        const covers: ICover[] = coverNode.length === 1 ? [{
-          MIME: "image/jpeg",
-          Normal: new URL(coverNode.attr("src").trim()),
-          side: CoverSide.Front,
-          volume: 0,
-        }] : [];
+          // Cover
+          const coverNode = contentNode.find("div:nth-child(4) > div > div:nth-child(2) > center > img");
+          const covers: ICover[] = coverNode.length === 1 ? [{
+            MIME: "image/jpeg",
+            Normal: new URL(coverNode.attr("src").trim()),
+            side: CoverSide.Front,
+            volume: 0,
+          }] : [];
 
-        // Related
-        const relatedNodes = contentNode.find("div:nth-child(3) > div > div:nth-child(8) > a");
-        const related: ISource[] = relatedNodes.toArray()
-          .map((node) => parseLinkBind(node))
-          .filter((relatedSource) => Boolean(relatedSource)) as ISource[];
+          // Related
+          const relatedNodes = contentNode.find("div:nth-child(3) > div > div:nth-child(8) > a");
+          const related: ISource[] = relatedNodes.toArray()
+            .map((node) => parseLinkBind(node))
+            .filter((relatedSource) => Boolean(relatedSource)) as ISource[];
 
-        // Associated Names
-        const associatedNamesNode = contentNode.find("div:nth-child(3) > div > div:nth-child(11)");
-        const associatedNames = associatedNamesNode.children().toArray()
-          .map((node) => (node.prev as any).data.trim());
+          // Associated Names
+          const associatedNamesNode = contentNode.find("div:nth-child(3) > div > div:nth-child(11)");
+          const associatedNames = associatedNamesNode.children().toArray()
+            .map((node) => (node.prev as any).data.trim());
 
-        // Groups Scanulating
-        const groupsScanulatingNodes = contentNode.find("div:nth-child(3) > div > div:nth-child(14) > a");
-        const groupsScanulating = groupsScanulatingNodes.toArray()
-          .map((node) => parseLinkBind(node))
-          .filter((groupsScanulatingSource) => Boolean(groupsScanulatingSource)) as ISource[];
+          // Groups Scanulating
+          const groupsScanulatingNodes = contentNode.find("div:nth-child(3) > div > div:nth-child(14) > a");
+          const groupsScanulating = groupsScanulatingNodes.toArray()
+            .map((node) => parseLinkBind(node))
+            .filter((groupsScanulatingSource) => Boolean(groupsScanulatingSource)) as ISource[];
 
-        // TODO: Complete MangaUpdates details
-        return {
-          about: {
-            associatedNames: (associatedNames),
-            covers: (covers),
-            description: (description),
-            type: (type),
-          },
-          meta: {
-            categoryRecommendations: [],
-            groupsScanulating: (groupsScanulating),
-            recommendations: [],
-            related: (related),
-          },
-          name: (name),
-          source: (source.source),
-        };
-      });
+          // TODO: Complete MangaUpdates details
+          return {
+            about: {
+              associatedNames: (associatedNames),
+              covers: (covers),
+              description: (description),
+              type: (type),
+            },
+            meta: {
+              categoryRecommendations: [],
+              groupsScanulating: (groupsScanulating),
+              recommendations: [],
+              related: (related),
+            },
+            name: (name),
+            source: (source.source),
+          };
+        });
+    }
   }
 
   protected querySearchCache(title: string): Promise<ICacheScoredResult<ISource>> {

@@ -1,0 +1,50 @@
+/* tslint:disable:no-string-literal */
+/// <reference types="mocha"/>
+import { expect } from "chai";
+import { CloudKicker } from "cloudkicker";
+import * as sinon from "sinon";
+// import { URL } from "url";
+import { ISource } from "../../src/models";
+import { ProviderCore } from "../../src/provider";
+import * as utils from "../utils";
+
+describe("MangaReader Tests", () => {
+  const cloudkicker: CloudKicker = new CloudKicker();
+  const provider = new ProviderCore(cloudkicker);
+  let sandbox: sinon.SinonSandbox;
+  let clock: sinon.SinonFakeTimers;
+
+  beforeEach("set-up", () => {
+    sandbox = sinon.sandbox.create();
+    clock = sinon.useFakeTimers();
+  });
+  afterEach("tear-down", () => {
+    sandbox.restore();
+    clock.restore();
+  });
+
+  it("should return is", (done) => {
+    expect(provider.is).to.be.equal("MangaReader");
+    done();
+  });
+
+  const generateTests = (local: boolean = true) => undefined;
+
+  describe("Local File Tests", () => generateTests(true));
+
+  describe("Remote Live Tests", function() {
+    if (utils.CI) {
+      it.skip("detected running on CI, skipping");
+    } else {
+      this.timeout(5000);
+      this.slow(3000);
+      this.retries(3);
+      before(() => {
+        cloudkicker.clearCookieJar();
+        provider.clearCache();
+      });
+      generateTests(false);
+    }
+  });
+
+});
