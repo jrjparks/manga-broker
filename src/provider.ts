@@ -1,11 +1,11 @@
 import { CloudKicker } from "cloudkicker";
-import { URL } from "url";
+import { Url } from "url";
 import { ScoredCache } from "./cache/ScoredCache";
 import { IChapter, IDetails, ISearchOptions, ISearchResults, ISource } from "./models";
 
 export interface IProvider {
   readonly is: string;
-  readonly baseURL: URL;
+  readonly baseURL: Url;
   search(title: string, options?: ISearchOptions): Promise<ISearchResults>;
   details(source: ISource): Promise<IDetails>;
 }
