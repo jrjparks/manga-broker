@@ -66,7 +66,9 @@ describe("MangaReader Tests", () => {
         });
     });
 
-    it("should fail search 'Knights & Magic'", () => {
+    it("should fail search 'Knights & Magic'", function() {
+      this.timeout(5000);
+      this.slow(2000);
       if (local) {
         sandbox.stub(cloudkicker, "get")
           .resolves({ response: { body: utils.getFixture("MangaReader/alphabetical.html") } });
@@ -79,20 +81,20 @@ describe("MangaReader Tests", () => {
         });
     });
 
-    it("should return details for 'Onepunch-Man'", () => {
-      if (local) {
-        sandbox.stub(cloudkicker, "get")
-          .resolves({ response: { body: utils.getFixture("MangaReader/onepunch-man.html") } });
-      }
-      const source: ISource = {
-        name: "Onepunch-Man",
-        source: new URL("http://www.mangareader.net/onepunch-man"),
-      };
-      return mangareader.details(source)
-        .then((details) => {
-          expect(details).to.be.ok;
-        });
-    });
+    // it("should return details for 'Onepunch-Man'", () => {
+    //   if (local) {
+    //     sandbox.stub(cloudkicker, "get")
+    //       .resolves({ response: { body: utils.getFixture("MangaReader/onepunch-man.html") } });
+    //   }
+    //   const source: ISource = {
+    //     name: "Onepunch-Man",
+    //     source: new URL("http://www.mangareader.net/onepunch-man"),
+    //   };
+    //   return mangareader.details(source)
+    //     .then((details) => {
+    //       expect(details).to.be.ok;
+    //     });
+    // });
 
     it("should return chapters for 'Onepunch-Man'", () => {
       if (local) {

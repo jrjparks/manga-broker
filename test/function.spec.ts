@@ -1,8 +1,25 @@
 /// <reference types="mocha"/>
 import { expect } from "chai";
+import { stringEnum } from "../src/StringEnum";
 import * as Diacritics from "../src/util/Diacritics";
 import { levenshtein } from "../src/util/Levenshtein";
 import { StringUtil } from "../src/util/string";
+
+describe("StringEnum Function Tests", () => {
+  it("should create stringEnum", (done) => {
+    const Direction = stringEnum([
+      "Up",
+      "Down",
+      "Left",
+      "Right",
+    ]);
+    type Direction = keyof typeof Direction;
+    expect(Direction.Up).to.be.equal("Up");
+    expect(Direction.Left).to.be.equal("Left");
+    expect(Direction.Right).to.not.be.equal("Down");
+    done();
+  });
+});
 
 describe("Diacritics Function Tests", () => {
   it("should return unchanged result", (done) => {
