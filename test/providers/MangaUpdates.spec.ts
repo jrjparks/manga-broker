@@ -13,15 +13,7 @@ describe("MangaUpdates Tests", () => {
   let sandbox: sinon.SinonSandbox;
   let clock: sinon.SinonFakeTimers;
 
-  beforeEach("set-up", () => {
-    sandbox = sinon.sandbox.create();
-    clock = sinon.useFakeTimers();
-  });
-  afterEach("tear-down", () => {
-    sandbox.restore();
-    clock.restore();
-  });
-
+  utils.providerBadSourceHostTests(mangaupdates);
 
   const generateTests = (local: boolean = true) => {
 
@@ -91,7 +83,21 @@ describe("MangaUpdates Tests", () => {
     });
   };
 
-  describe("Local File Tests", () => generateTests(true));
+  describe("Local File Tests", () => {
+    before(() => {
+      cloudkicker.clearCookieJar();
+      mangaupdates.clearCache();
+    });
+    beforeEach("set-up", () => {
+      sandbox = sinon.sandbox.create();
+      clock = sinon.useFakeTimers();
+    });
+    afterEach("tear-down", () => {
+      sandbox.restore();
+      clock.restore();
+    });
+    generateTests(true);
+  });
 
   describe("Remote Live Tests", function() {
     if (utils.CI) {

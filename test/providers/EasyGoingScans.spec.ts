@@ -14,24 +14,18 @@ describe("EasyGoingScans Tests", () => {
   let sandbox: sinon.SinonSandbox;
   let clock: sinon.SinonFakeTimers;
 
-  beforeEach("set-up", () => {
-    sandbox = sinon.sandbox.create();
-    clock = sinon.useFakeTimers();
-  });
-  afterEach("tear-down", () => {
-    sandbox.restore();
-    clock.restore();
-  });
-
   it("should return is", (done) => {
     expect(egscans.is).to.be.equal("EasyGoingScans");
     done();
   });
 
+  utils.providerBadSourceHostTests(egscans);
+
   const generateTests = (local: boolean = true) => {
     it("should get cache", () => {
       if (local) {
-        sandbox.stub(cloudkicker, "get")
+        const get = sandbox.stub(cloudkicker, "get");
+        get.withArgs(sinon.match({ href: "http://read.egscans.com/" }))
           .resolves({ response: { body: utils.getFixture("EasyGoingScans/search.html") } });
       }
       return egscans["getSearchCache"]()
@@ -51,8 +45,11 @@ describe("EasyGoingScans Tests", () => {
     });
 
     it("should fail for 'One Punch-Man'", () => {
-      sandbox.stub(cloudkicker, "get")
-        .resolves({ response: { body: utils.getFixture("EasyGoingScans/search.html") } });
+      if (local) {
+        const get = sandbox.stub(cloudkicker, "get");
+        get.withArgs(sinon.match({ href: "http://read.egscans.com/" }))
+          .resolves({ response: { body: utils.getFixture("EasyGoingScans/search.html") } });
+      }
       return egscans.search("One Punch-Man")
         .then(utils.unexpectedPromise)
         .catch((error) => {
@@ -63,7 +60,8 @@ describe("EasyGoingScans Tests", () => {
 
     it("should return search result for 'Knights & Magic'", () => {
       if (local) {
-        sandbox.stub(cloudkicker, "get")
+        const get = sandbox.stub(cloudkicker, "get");
+        get.withArgs(sinon.match({ href: "http://read.egscans.com/" }))
           .resolves({ response: { body: utils.getFixture("EasyGoingScans/search.html") } });
       }
       return egscans.search("Knights & Magic")
@@ -90,14 +88,15 @@ describe("EasyGoingScans Tests", () => {
     });
 
     it("should return chapters for 'Knights & Magic'", () => {
-      if (local) {
-        sandbox.stub(cloudkicker, "get")
-          .resolves({ response: { body: utils.getFixture("EasyGoingScans/Knights_and_Magic.html") } });
-      }
       const source: ISource = {
         name: "Knights and Magic",
-        source: new URL("http://read.egscans.com/Knights_and_Magic"),
+        source: new URL("http://read.egscans.com/Knights_and_Magic/"),
       };
+      if (local) {
+        const get = sandbox.stub(cloudkicker, "get");
+        get.withArgs(sinon.match({ href: (source.source.href) }))
+          .resolves({ response: { body: utils.getFixture("EasyGoingScans/Knights_and_Magic.html") } });
+      }
       return egscans.chapters(source)
         .then((chapters) => {
           expect(chapters).to.be.ok;
@@ -110,14 +109,15 @@ describe("EasyGoingScans Tests", () => {
     });
 
     it("should return pages for 'Knights & Magic' 'Chapter 001'", () => {
-      if (local) {
-        sandbox.stub(cloudkicker, "get")
-          .resolves({ response: { body: utils.getFixture("EasyGoingScans/Knights_and_Magic.html") } });
-      }
       const source: ISource = {
         name: "Knights and Magic",
-        source: new URL("http://read.egscans.com/Knights_and_Magic/Chapter_001"),
+        source: new URL("http://read.egscans.com/Knights_and_Magic/Chapter_001/?display=webtoon"),
       };
+      if (local) {
+        const get = sandbox.stub(cloudkicker, "get");
+        get.withArgs(sinon.match({ href: (source.source.href) }))
+          .resolves({ response: { body: utils.getFixture("EasyGoingScans/Knights_and_Magic.html") } });
+      }
       return egscans.pages(source)
         .then((pages) => {
           expect(pages).to.be.ok;
@@ -131,7 +131,22 @@ describe("EasyGoingScans Tests", () => {
     });
   };
 
-  describe("Local File Tests", () => generateTests(true));
+  describe("Local File Tests", () => {
+    before(() => {
+      cloudkicker.clearCookieJar();
+      egscans.clearCache();
+    });
+    beforeEach("set-up", () => {
+      sandbox = sinon.sandbox.create();
+      clock = sinon.useFakeTimers();
+    });
+    afterEach("tear-down", () => {
+      sandbox.restore();
+      clock.restore();
+    });
+
+    generateTests(true);
+  });
 
   describe("Remote Live Tests", function() {
     if (utils.CI) {

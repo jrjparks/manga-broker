@@ -15,19 +15,12 @@ describe("MangaReader Tests", () => {
   let sandbox: sinon.SinonSandbox;
   let clock: sinon.SinonFakeTimers;
 
-  beforeEach("set-up", () => {
-    sandbox = sinon.sandbox.create();
-    clock = sinon.useFakeTimers();
-  });
-  afterEach("tear-down", () => {
-    sandbox.restore();
-    clock.restore();
-  });
-
   it("should return is", (done) => {
     expect(mangareader.is).to.be.equal("MangaReader");
     done();
   });
+
+  utils.providerBadSourceHostTests(mangareader);
 
   const generateTests = (local: boolean = true) => {
     it("should get cache", () => {
@@ -78,6 +71,19 @@ describe("MangaReader Tests", () => {
         .catch((error) => {
           expect(error).to.be.ok;
           expect(error.message).to.be.contain("Title not found.");
+        });
+    });
+
+    it("should fail to return details", () => {
+      const source: ISource = {
+        name: "Test Source",
+        source: new URL("http://www.mangareader.net/onepunch-man"),
+      };
+      return mangareader.details(source)
+        .then(utils.unexpectedPromise)
+        .catch((error) => {
+          expect(error).to.be.ok;
+          expect(error.message).to.be.equal("This function is not supported by this provider.");
         });
     });
 
@@ -144,7 +150,21 @@ describe("MangaReader Tests", () => {
     });
   };
 
-  describe("Local File Tests", () => generateTests(true));
+  describe("Local File Tests", () => {
+    before(() => {
+      cloudkicker.clearCookieJar();
+      mangareader.clearCache();
+    });
+    beforeEach("set-up", () => {
+      sandbox = sinon.sandbox.create();
+      clock = sinon.useFakeTimers();
+    });
+    afterEach("tear-down", () => {
+      sandbox.restore();
+      clock.restore();
+    });
+    generateTests(true);
+  });
 
   describe("Remote Live Tests", function() {
     if (utils.CI) {

@@ -8,7 +8,7 @@ import { ISource } from "../../src/models";
 import { ProviderCore } from "../../src/provider";
 import * as utils from "../utils";
 
-describe("MangaReader Tests", () => {
+describe("ProviderCore Tests", () => {
   const cloudkicker: CloudKicker = new CloudKicker();
   const provider = new ProviderCore(cloudkicker);
   let sandbox: sinon.SinonSandbox;
@@ -24,7 +24,7 @@ describe("MangaReader Tests", () => {
   });
 
   it("should return is", (done) => {
-    expect(provider.is).to.be.equal("MangaReader");
+    expect(provider.is).to.be.equal("ProviderCore");
     done();
   });
 
@@ -36,8 +36,8 @@ describe("MangaReader Tests", () => {
     if (utils.CI) {
       it.skip("detected running on CI, skipping");
     } else {
-      this.timeout(5000);
-      this.slow(3000);
+      this.timeout(10000);
+      this.slow(5000);
       this.retries(3);
       before(() => {
         cloudkicker.clearCookieJar();

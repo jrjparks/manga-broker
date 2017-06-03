@@ -28,7 +28,7 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
   public details(source: ISource): Promise<IDetails> {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
-    } else { return Promise.reject(new Error("This function has not been implemented yet.")); }
+    } else { return Promise.reject(new Error("This function is not supported by this provider.")); }
   }
 
   public chapters(source: ISource): Promise<IChapter[]> {
