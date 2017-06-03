@@ -24,7 +24,7 @@ export class ProviderCore {
   protected readonly searchCache: ScoredCache<ISource> = new ScoredCache<ISource>();
 
   // this constructor is really only used for testing
-  constructor(cloudkicker ?: CloudKicker) {
+  constructor(cloudkicker?: CloudKicker) {
     this.cloudkicker = cloudkicker || new CloudKicker();
   }
 
