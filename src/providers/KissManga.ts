@@ -106,10 +106,10 @@ export class KissManga extends ProviderCore implements ISourceProvider {
             const linkElement: Cheerio = element.find("a");
             const nameParts: string[] = linkElement.text().split(":")
               .map((str) => str.trim()).filter((str) => !!(str));
-            const name = _.last(nameParts);
+            const name: string = _.last(nameParts) as string;
             const location = new URL(this.baseURL.href);
             location.pathname = linkElement.attr("href");
-            const chapterMatch: RegExpMatchArray | null = _.first(nameParts).match(/\d+$/);
+            const chapterMatch: RegExpMatchArray | null = (_.first(nameParts) as string).match(/\d+$/);
             const chapter = chapterMatch ? parseInt(chapterMatch[0], 10) : undefined;
             chapters.push({
               chapter: (chapter),

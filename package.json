@@ -32,8 +32,8 @@
   "devDependencies": {
     "@types/chai": "^3.5.2",
     "@types/mocha": "^2.2.41",
-    "@types/node": "^7.0.21",
-    "@types/sinon": "^2.2.2",
+    "@types/node": "^7.0.27",
+    "@types/sinon": "^2.3.0",
     "chai": "^3.5.0",
     "coveralls": "^2.13.1",
     "gulp": "^3.9.1",
@@ -48,12 +48,12 @@
     "sinon": "^2.2.0",
     "source-map-support": "^0.4.15",
     "ts-node": "^3.0.4",
-    "tslint": "^5.2.0",
+    "tslint": "^5.4.2",
     "typescript": "^2.3.2"
   },
   "dependencies": {
     "@types/cheerio": "^0.22.1",
-    "@types/lodash": "^4.14.64",
+    "@types/lodash": "^4.14.65",
     "cheerio": "^1.0.0-rc.1",
     "cloudkicker": "^1.0.0",
     "lodash": "^4.17.4"

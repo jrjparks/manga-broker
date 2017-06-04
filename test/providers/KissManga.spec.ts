@@ -26,8 +26,7 @@ describe("KissManga Tests", () => {
     it("should return search result for 'One Punch-Man'", () => {
       if (local) {
         const get = sandbox.stub(cloudkicker, "get");
-        utils.handleUnhandledArgs(get);
-        get.withArgs(sinon.match({ href: "https://kissmanga.com/Search/Manga?keyword=One%20Punch-Man" }))
+        get.withArgs(sinon.match({ href: "https://kissmanga.com/Search/Manga?keyword=One+Punch-Man" }))
           .resolves({ response: { body: utils.getFixture("KissManga/Search_Manga_One_Punch-Man.html") } });
       }
       return kissmanga.search("One Punch-Man")
@@ -43,8 +42,7 @@ describe("KissManga Tests", () => {
     it("should return search result for 'One Punch-Man (ONE)'", () => {
       if (local) {
         const get = sandbox.stub(cloudkicker, "get");
-        utils.handleUnhandledArgs(get);
-        get.withArgs(sinon.match({ href: "https://kissmanga.com/Search/Manga?keyword=One%20Punch-Man" }))
+        get.withArgs(sinon.match({ href: "https://kissmanga.com/Search/Manga?keyword=One+Punch-Man+%28ONE%29" }))
           .resolves({ response: { body: utils.getFixture("KissManga/Search_Manga_One_Punch-Man.html") } });
       }
       return kissmanga.search("One Punch-Man (ONE)")
@@ -60,8 +58,7 @@ describe("KissManga Tests", () => {
     it("should fail search result for 'Blah Blah'", () => {
       if (local) {
         const get = sandbox.stub(cloudkicker, "get");
-        utils.handleUnhandledArgs(get);
-        get.withArgs(sinon.match({ href: "https://kissmanga.com/Search/Manga?keyword=Blah%20Blah" }))
+        get.withArgs(sinon.match({ href: "https://kissmanga.com/Search/Manga?keyword=Blah+Blah" }))
           .resolves({ response: { body: utils.getFixture("KissManga/Search_Manga_Blah_Blah.html") } });
       }
       return kissmanga.search("Blah Blah")
