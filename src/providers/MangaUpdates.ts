@@ -42,7 +42,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
           const $ = cheerio.load(response.body);
 
           const pageSelector: string = [
-            "#main_content", "div", "table", "tr:nth-last-child(4)", "td",
+            "#main_content", "div", "table", "tbody", "tr:nth-last-child(4)", "td",
             "table:nth-child(1)", "tr",
           ].join(" > ");
           const pageNodes = $(pageSelector);
@@ -85,6 +85,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
           if (options && options.excludeNovels) {
             results = results.filter((result) => !(result.meta && result.meta.isNovel));
           }
+          if (results.length === 0) { throw new Error("Title not found."); }
           return {
             hasNext: (hasNextPage),
             hasPrev: (hasPreviousPage),
@@ -125,7 +126,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
           const parseLinkBind: (node: CheerioElement) => ISource | undefined = parseLink.bind(this);
 
           // Series Content Node
-          const contentNode = $("#main_content > table.series_content_table > tr > td > div:nth-child(1)");
+          const contentNode = $("#main_content > table.series_content_table > tbody > tr > td > div:nth-child(1)");
 
           // Type
           const typeNode = contentNode.find("div:nth-child(3) > div > div:nth-child(5)");
