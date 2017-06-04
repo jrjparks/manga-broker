@@ -37,7 +37,7 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
         .then(({response}) => {
           const $ = cheerio.load(response.body);
           const selector = [
-            "#omv", "table", "tr:nth-child(2)", "td.mid", "table",
+            "#omv", "table", "tbody", "tr:nth-child(2)", "td.mid", "table", "tbody",
             "tr:nth-child(1)", "td", "div", "span:nth-child(3)", "select", "option",
           ].join(" > ");
           const nodes = $(selector);
@@ -69,7 +69,7 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
         .then(({response}) => {
           const $ = cheerio.load(response.body);
           const selector = [
-            "#omv", "table", "tr:nth-child(2)", "td.mid", "table",
+            "#omv", "table", "tbody", "tr:nth-child(2)", "td.mid", "table", "tbody",
             "tr:nth-child(3)", "td", "a", "img",
           ].join(" > ");
           const nodes = $(selector);
@@ -98,7 +98,7 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
           this.searchCache.clear();
           const $ = cheerio.load(response.body);
           const selector = [
-            "#omv", "table", "tr:nth-child(2)", "td.mid", "table",
+            "#omv", "table", "tbody", "tr:nth-child(2)", "td.mid", "table", "tbody",
             "tr:nth-child(1)", "td", "div", "span", "select", "option",
           ].join(" > ");
           const nodes = $(selector);
