@@ -1,16 +1,16 @@
-/* tslint:disable:no-string-literal */
+/* tslint:disable:no-string-literal max-line-length */
 /// <reference types="mocha"/>
 import { expect } from "chai";
 import { CloudKicker } from "cloudkicker";
 import * as sinon from "sinon";
 import { URL } from "url";
-import { KissMangaUrlDecrypter } from "../../src/providers/KissMangaUrlDecrypter";
+import { KissMangaUrlDecrypter } from "../../src/providers/KissManga";
 import * as utils from "../utils";
 
 describe("KissMangaUrlDecrypter Tests", () => {
   const cloudkicker: CloudKicker = new CloudKicker();
   const baseUrl = new URL("https://kissmanga.com");
-  const kissmangaurldecrypter = new KissMangaUrlDecrypter(baseUrl, cloudkicker);
+  let kissmangaurldecrypter: KissMangaUrlDecrypter;
   const testPageContent: Buffer = utils.getFixture("KissManga/Knights-Magic-Ch-001.html");
 
   let sandbox: sinon.SinonSandbox;
@@ -26,6 +26,7 @@ describe("KissMangaUrlDecrypter Tests", () => {
       .resolves({ response: { body: utils.getFixture("KissManga/ca.js") } });
     get.withArgs(sinon.match({ href: "https://kissmanga.com/Scripts/lo.js" }))
       .resolves({ response: { body: utils.getFixture("KissManga/lo.js") } });
+    kissmangaurldecrypter = new KissMangaUrlDecrypter(baseUrl, cloudkicker, true);
   });
   afterEach("tear-down", () => {
     sandbox.restore();
@@ -42,6 +43,13 @@ describe("KissMangaUrlDecrypter Tests", () => {
           expect(error.message).to.be.ok;
           expect(error.message).to.be.equal("Unable to locate decryption key.");
         });
+    });
+
+    it("should test sandbox", (done) => {
+      const decryptionKeySandbox = kissmangaurldecrypter["sandbox"];
+      (decryptionKeySandbox as any).alert();
+      (decryptionKeySandbox as any).location.reload();
+      done();
     });
 
     [
