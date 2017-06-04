@@ -5,7 +5,7 @@ import { expect } from "chai";
 import { CloudKicker } from "cloudkicker";
 import * as sinon from "sinon";
 import { URL } from "url";
-import { ISource } from "../../src/models";
+import { ISource } from "../../src/models/source";
 import { MangaPanda } from "../../src/providers/MangaPanda";
 import * as utils from "../utils";
 

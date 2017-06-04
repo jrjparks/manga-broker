@@ -4,7 +4,12 @@ import { CloudKicker } from "cloudkicker";
 import path = require("path");
 import { URL } from "url";
 import vm = require("vm");
-import { IChapter, IDetails, ISearchResults, ISource } from "../models";
+
+import { IChapter } from "../models/chapter";
+import { IDetails } from "../models/details";
+import { Genre } from "../models/genre";
+import { ISearchResults } from "../models/search";
+import { ISource } from "../models/source";
 
 import { ICacheScoredResult } from "../cache/ScoredCache";
 import { ISourceProvider, ProviderCore } from "../provider";
@@ -41,7 +46,47 @@ export class KissManga extends ProviderCore implements ISourceProvider {
   public details(source: ISource): Promise<IDetails> {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
-    } else { return Promise.reject(new Error("This function is not supported by this provider.")); }
+    } else {
+      return this.cloudkicker.get(source.source)
+        .then(({response}) => {
+          const $ = cheerio.load(response.body);
+          const selector = [
+            "#leftside", "div:nth-child(1)", "div.barContent", "div:nth-child(2)",
+          ].join(" > ");
+          const detailsNode = $(selector);
+          const name = detailsNode.find("a").first().text();
+          const associatedNames: ISource[] = detailsNode.find("p:nth-child(2) > a")
+            .toArray().map((node) => {
+              const element = $(node);
+              const associatedName: string = element.text().trim();
+              const location = new URL(this.baseURL.href);
+              location.pathname = element.attr("href");
+              return {
+                name: (associatedName),
+                source: (location),
+              };
+            });
+          const genres: Genre[] = detailsNode.find("p:nth-child(3) > a").toArray()
+            .map((genreNode: CheerioElement) => $(genreNode).text().trim().replace(/[^\w]/, ""))
+            .map((genre: keyof typeof Genre) => Genre[genre]);
+          const authorArtist: string[] = detailsNode.find("p:nth-child(4) > a").toArray()
+            .map((node) => $(node).text().trim());
+
+          return {
+            about: {
+              artists: (authorArtist),
+              associatedNames: (associatedNames),
+              authors: (authorArtist),
+              genres: (genres),
+            },
+            meta: {
+              isNovel: false,
+            },
+            name: (name),
+            source: (source.source),
+          };
+        });
+    }
   }
 
   public chapters(source: ISource): Promise<IChapter[]> {

@@ -1,3 +1,4 @@
+
 /// <reference types="mocha"/>
 import { expect } from "chai";
 import { stringEnum } from "../src/StringEnum";
@@ -16,6 +17,8 @@ describe("StringEnum Function Tests", () => {
     type Direction = keyof typeof Direction;
     expect(Direction.Up).to.be.equal("Up");
     expect(Direction.Left).to.be.equal("Left");
+    const right = "Right";
+    expect(Direction[right]).to.be.equal("Right");
     expect(Direction.Right).to.not.be.equal("Down");
     done();
   });

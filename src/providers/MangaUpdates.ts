@@ -1,7 +1,13 @@
 import _ = require("lodash");
 import cheerio = require("cheerio");
 import { URL } from "url";
-import { CoverSide, Genre, ICover, IDetails, ISearchOptions, ISearchResults, ISource, Type } from "../models";
+
+import { CoverSide, ICover } from "../models/cover";
+import { IDetails } from "../models/details";
+import { Genre } from "../models/genre";
+import { ISearchOptions, ISearchResults } from "../models/search";
+import { ISource } from "../models/source";
+import { Type } from "../models/type";
 
 import { ICacheScoredResult } from "../cache/ScoredCache";
 import { IProvider, ProviderCore } from "../provider";
@@ -158,8 +164,16 @@ export class MangaUpdates extends ProviderCore implements IProvider {
 
           // Associated Names
           const associatedNamesNode = contentNode.find("div:nth-child(3) > div > div:nth-child(11)");
-          const associatedNames = associatedNamesNode.children().toArray()
-            .map((node) => (node.prev as any).data.trim());
+          const associatedNames: ISource[] = associatedNamesNode.children().toArray()
+            .map((node) => {
+              const element = $(node);
+              const location = new URL(this.baseURL.href);
+              location.pathname = element.attr("href");
+              return {
+                name: "",
+                source: (location),
+              };
+            });
 
           // Groups Scanulating
           const groupsScanulatingNodes = contentNode.find("div:nth-child(3) > div > div:nth-child(14) > a");

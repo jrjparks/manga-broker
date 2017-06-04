@@ -2,7 +2,7 @@
 import { expect } from "chai";
 import fs = require("fs");
 import { URL } from "url";
-import { ISource } from "../src/models";
+import { ISource } from "../src/models/source";
 import { IProvider, ISourceProvider } from "../src/provider";
 export const CI = process.env.CI;
 

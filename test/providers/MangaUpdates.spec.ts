@@ -3,7 +3,10 @@ import { expect } from "chai";
 import { CloudKicker } from "cloudkicker";
 import * as sinon from "sinon";
 import { URL } from "url";
-import { Genre, IDetails, ISource } from "../../src/models";
+
+import { IDetails } from "../../src/models/details";
+import { Genre } from "../../src/models/genre";
+import { ISource } from "../../src/models/source";
 import { MangaUpdates } from "../../src/providers/MangaUpdates";
 import * as utils from "../utils";
 

@@ -1,7 +1,11 @@
 import { CloudKicker } from "cloudkicker";
 import { Url } from "url";
 import { ScoredCache } from "./cache/ScoredCache";
-import { IChapter, IDetails, ISearchOptions, ISearchResults, ISource } from "./models";
+
+import { IChapter } from "./models/chapter";
+import { IDetails } from "./models/details";
+import { ISearchOptions, ISearchResults } from "./models/search";
+import { ISource } from "./models/source";
 
 export interface IProvider {
   readonly is: string;

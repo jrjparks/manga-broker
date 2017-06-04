@@ -4,7 +4,8 @@ import { expect } from "chai";
 import { CloudKicker } from "cloudkicker";
 import * as sinon from "sinon";
 import { URL } from "url";
-import { ISource } from "../../src/models";
+import { Genre } from "../../src/models/genre";
+import { ISource } from "../../src/models/source";
 import { KissManga } from "../../src/providers/KissManga";
 import * as utils from "../utils";
 
@@ -162,16 +163,30 @@ describe("KissManga Tests", () => {
         });
     });
 
-    it("should fail to return details", () => {
+    it("should return details for 'Knights and Magic'", () => {
       const source: ISource = {
-        name: "Test Source",
-        source: new URL("https://kissmanga.com/Manga/Knights-Magic/"),
+        name: "Knights & Magic",
+        source: new URL("https://kissmanga.com/Manga/Knights-Magic"),
       };
+      if (local) {
+        const get = sandbox.stub(cloudkicker, "get");
+        get.withArgs(sinon.match({ href: (source.source.href) }))
+          .resolves({ response: { body: utils.getFixture("KissManga/Knights-Magic.html") } });
+      }
       return kissmanga.details(source)
-        .then(utils.unexpectedPromise)
-        .catch((error) => {
-          expect(error).to.be.ok;
-          expect(error.message).to.be.equal("This function is not supported by this provider.");
+        .then((details) => {
+          expect(details).to.be.ok;
+          expect(details.name).to.be.equal("Knights & Magic");
+
+          if (!details.about) { throw new Error("about is not defined"); }
+          expect(details.about).to.be.ok;
+          if (!details.about.genres) { throw new Error("about.genres is not defined"); }
+          expect(details.about.genres).to.be.ok;
+          expect(details.about.genres).to.have.members([
+            Genre.Action, Genre.Adventure, Genre.Comedy, Genre.Drama,
+            Genre.Fantasy, Genre.Harem, Genre.Mecha, Genre.Romance,
+            Genre.SchoolLife, Genre.Seinen,
+          ]);
         });
     });
   };
