@@ -44,21 +44,6 @@ describe("MangaReader Tests", () => {
         });
     });
 
-    it("should return search result for 'Onepunch-Man'", () => {
-      if (local) {
-        sandbox.stub(cloudkicker, "get")
-          .resolves({ response: { body: utils.getFixture("MangaReader/alphabetical.html") } });
-      }
-      return mangareader.search("Onepunch-Man")
-        .then(({results}) => {
-          const result = results[0];
-          expect(result.name).to.be.ok;
-          expect(result.source).to.be.ok;
-          expect(result.name).to.be.equal("Onepunch-Man");
-          expect(result.source.href).to.be.equal("http://www.mangareader.net/onepunch-man");
-        });
-    });
-
     it("should fail search 'Knights & Magic'", function() {
       this.timeout(5000);
       this.slow(2000);
@@ -74,6 +59,54 @@ describe("MangaReader Tests", () => {
         });
     });
 
+    [{
+      fixture: "MangaReader/onepunch-man.html",
+      href: "http://www.mangareader.net/onepunch-man",
+      name: "Onepunch-Man",
+    }, {
+        fixture: "MangaReader/kapon.html",
+        href: "http://www.mangareader.net/kapon-_",
+        name: "Kapon (>_<)!",
+      },
+    ].forEach(({name, href, fixture}) => {
+      it(`should return search result for '${name}'`, () => {
+        if (local) {
+          sandbox.stub(cloudkicker, "get")
+            .resolves({ response: { body: utils.getFixture("MangaReader/alphabetical.html") } });
+        }
+        return mangareader.search(name)
+          .then(({results}) => {
+            const result = results[0];
+            expect(result.name).to.be.ok;
+            expect(result.source).to.be.ok;
+            expect(result.name).to.be.equal(name);
+            expect(result.source.href).to.be.equal(href);
+          });
+      });
+
+      it(`should return chapters for '${name}'`, () => {
+        const source: ISource = {
+          name: (name),
+          source: new URL(href),
+        };
+        if (local) {
+          sandbox.stub(cloudkicker, "get")
+            .withArgs(sinon.match({ href: (source.source.href) }))
+            .resolves({ response: { body: utils.getFixture(fixture) } });
+        }
+        return mangareader.chapters(source)
+          .then((chapters) => {
+            expect(chapters).to.be.ok;
+            expect(chapters).to.be.length.above(0);
+            const chapter = chapters[0];
+            expect(chapter.name).to.be.ok;
+            expect(chapter.source).to.be.ok;
+            expect(chapter.chapter).to.be.ok;
+            expect(chapter.chapter).to.be.equal(1);
+          });
+      });
+    });
+
     it("should fail to return details", () => {
       const source: ISource = {
         name: "Test Source",
@@ -87,42 +120,11 @@ describe("MangaReader Tests", () => {
         });
     });
 
-    // it("should return details for 'Onepunch-Man'", () => {
-    //   if (local) {
-    //     sandbox.stub(cloudkicker, "get")
-    //       .resolves({ response: { body: utils.getFixture("MangaReader/onepunch-man.html") } });
-    //   }
-    //   const source: ISource = {
-    //     name: "Onepunch-Man",
-    //     source: new URL("http://www.mangareader.net/onepunch-man"),
-    //   };
-    //   return mangareader.details(source)
-    //     .then((details) => {
-    //       expect(details).to.be.ok;
-    //     });
-    // });
-
-    it("should return chapters for 'Onepunch-Man'", () => {
-      if (local) {
-        sandbox.stub(cloudkicker, "get")
-          .resolves({ response: { body: utils.getFixture("MangaReader/onepunch-man.html") } });
-      }
-      const source: ISource = {
-        name: "Onepunch-Man",
-        source: new URL("http://www.mangareader.net/onepunch-man"),
-      };
-      return mangareader.chapters(source)
-        .then((chapters) => {
-          expect(chapters).to.be.ok;
-          expect(chapters).to.be.length.above(0);
-        });
-    });
-
     it("should return pages for 'Onepunch-Man' 'Chapter 1'", () => {
       if (local) {
-        const getStub = sandbox.stub(cloudkicker, "get");
-        _.range(1, 20, 2).forEach((pageNumber, index) => {
-          getStub.onCall(index)
+        const get = sandbox.stub(cloudkicker, "get");
+        _.range(1, 20, 2).forEach((pageNumber) => {
+          get.withArgs(sinon.match({ href: `http://www.mangareader.net/onepunch-man/1/${pageNumber}` }))
             .resolves({ response: { body: utils.getFixture(`MangaReader/onepunch-man-1/${pageNumber}.html`) } });
         });
       }

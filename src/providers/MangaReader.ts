@@ -37,21 +37,23 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
     } else {
       return this.cloudkicker.get(source.source)
         .then(({response}) => {
+          // const $ = cheerio.load(StringUtil.sanitizeBodyTags(response.body.toString()));
           const $ = cheerio.load(response.body);
           const selector = [
-            "#listing", "tr", "td:nth-child(1):has(a)",
+            "#listing", "tbody", "tr", "td:nth-child(1):has(a)",
           ].join(" > ");
           const nodes = $(selector);
-          const chapterRegExp: RegExp = new RegExp(`${source.name}\\s(\\d+)\\s+:.*$`);
           return nodes.toArray().reduce((chapters, node) => {
             const element: Cheerio = $(node);
             const linkElement: Cheerio = element.find("a");
-            const name = _.last(element.text().split(":").map((str) => str.trim()));
+            const nameParts: string[] = element.text().split(":")
+              .map((str) => str.trim()).filter((str) => !!(str));
+            const name = _.last(nameParts);
             const value = linkElement.attr("href");
             const location = new URL(this.baseURL.href);
             location.pathname = value;
-            const chapterMatch: RegExpMatchArray | null = element.text().match(chapterRegExp);
-            const chapter = chapterMatch ? parseInt(chapterMatch[1], 10) : undefined;
+            const chapterMatch: RegExpMatchArray | null = _.first(nameParts).match(/\d+$/);
+            const chapter = chapterMatch ? parseInt(chapterMatch[0], 10) : undefined;
             chapters.push({
               chapter: (chapter),
               name: (name),
@@ -77,6 +79,7 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
       };
       return this.cloudkicker.get(source.source)
         .then(({response}) => {
+          // const $ = cheerio.load(StringUtil.sanitizeBodyTags(response.body.toString()));
           const $ = cheerio.load(response.body);
           const pageLocations: URL[] = $("#pageMenu > option")
             .toArray().map((node) => {
@@ -128,6 +131,7 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
       return this.cloudkicker.get(listUrl)
         .then(({response}) => {
           this.searchCache.clear();
+          // const $ = cheerio.load(StringUtil.sanitizeBodyTags(response.body.toString()));
           const $ = cheerio.load(response.body);
           const selector = [
             "#wrapper_body", "div", "div.series_col", "div.series_alpha",
