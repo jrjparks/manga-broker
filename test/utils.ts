@@ -1,5 +1,6 @@
 /// <reference types="mocha"/>
 import { expect } from "chai";
+import * as sinon from "sinon";
 import fs = require("fs");
 import { URL } from "url";
 import { ISource } from "../src/models/source";
@@ -8,6 +9,12 @@ export const CI = process.env.CI;
 
 export function getFixture(path: string) {
   return fs.readFileSync(`${__dirname}/fixtures/${path}`);
+}
+
+export function handleUnhandledArgs(stub: sinon.SinonStub) {
+  stub.withArgs(sinon.match(function() { // tslint:disable-line
+    console.log(arguments); // tslint:disable-line
+  })).rejects(new Error("Unhandled Stub"));
 }
 
 export function unexpectedPromise(result: any) {
