@@ -1,5 +1,6 @@
 export enum Genre {
-  Action,
+  Unknown = 0,
+  Action = 1,
   Adult,
   Adventure,
   Comedy,

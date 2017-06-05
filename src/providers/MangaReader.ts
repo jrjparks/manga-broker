@@ -4,9 +4,12 @@ import path = require("path");
 import { URL } from "url";
 
 import { IChapter } from "../models/chapter";
+import { CoverSide, ICover } from "../models/cover";
 import { IDetails } from "../models/details";
+import { Genre } from "../models/genre";
 import { ISearchResults } from "../models/search";
 import { ISource } from "../models/source";
+import { Status } from "../models/status";
 
 import { ICacheScoredResult, ScoredCache } from "../cache/ScoredCache";
 import { ISourceProvider, ProviderCore } from "../provider";
@@ -32,7 +35,59 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
   public details(source: ISource): Promise<IDetails> {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
-    } else { return Promise.reject(new Error("This function is not supported by this provider.")); }
+    } else {
+      return this.cloudkicker.get(source.source)
+        .then(({response}) => {
+          const $ = cheerio.load(response.body);
+          const name = $("#mangaproperties > h1").text().trim();
+          const propertiesNode = $("#mangaproperties > table > tbody");
+          const associatedNames: ISource[] = propertiesNode
+            .find("tr:nth-child(2) > td:nth-child(2)")
+            .text().split(",").map((associatedName) => {
+              return {
+                name: (associatedName.trim()),
+                source: (source.source),
+              };
+            });
+
+          const releaseYear = parseInt(propertiesNode.find("tr:nth-child(3) > td:nth-child(2)").text(), 10);
+
+          const statusText = propertiesNode.find("tr:nth-child(4) > td:nth-child(2)").text();
+          const status: Status = _.get(Status, statusText, Status.Unknown);
+
+          const genres: Genre[] = propertiesNode.find("tr:nth-child(8) > td:nth-child(2) > a")
+            .toArray().map((genreNode) => $(genreNode).text().trim())
+            .map((genre: string) => _.get(Genre, genre, Genre.Unknown))
+            .filter((genre: Genre) => genre !== Genre.Unknown);
+
+          const description = $("#readmangasum > p").text().trim();
+
+          const coverNode = $("#mangaimg > img");
+          const coverLocation = new URL(coverNode.attr("src"));
+          const covers: ICover[] = coverNode ? [{
+            MIME: "image/jpeg",
+            Thumbnail: (coverLocation),
+            side: CoverSide.Front,
+            volume: 1,
+          }] : [];
+
+          return {
+            about: {
+              associatedNames: (associatedNames),
+              covers: (covers),
+              description: (description),
+              genres: (genres),
+              releaseYear: (releaseYear),
+            },
+            meta: {
+              isNovel: false,
+              status: (status),
+            },
+            name: (name),
+            source: source.source,
+          };
+        });
+    }
   }
 
   public chapters(source: ISource): Promise<IChapter[]> {
@@ -41,7 +96,6 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
     } else {
       return this.cloudkicker.get(source.source)
         .then(({response}) => {
-          // const $ = cheerio.load(StringUtil.sanitizeBodyTags(response.body.toString()));
           const $ = cheerio.load(response.body);
           const selector = [
             "#listing", "tbody", "tr", "td:nth-child(1):has(a)",
@@ -52,11 +106,11 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
             const linkElement: Cheerio = element.find("a");
             const nameParts: string[] = element.text().split(":")
               .map((str) => str.trim()).filter((str) => !!(str));
-            const name = _.last(nameParts);
+            const name: string = _.last(nameParts) as string;
             const value = linkElement.attr("href");
             const location = new URL(this.baseURL.href);
             location.pathname = value;
-            const chapterMatch: RegExpMatchArray | null = _.first(nameParts).match(/\d+$/);
+            const chapterMatch: RegExpMatchArray | null = (_.first(nameParts) as string).match(/\d+$/);
             const chapter = chapterMatch ? parseInt(chapterMatch[0], 10) : undefined;
             chapters.push({
               chapter: (chapter),
@@ -83,7 +137,6 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
       };
       return this.cloudkicker.get(source.source)
         .then(({response}) => {
-          // const $ = cheerio.load(StringUtil.sanitizeBodyTags(response.body.toString()));
           const $ = cheerio.load(response.body);
           const pageLocations: URL[] = $("#pageMenu > option")
             .toArray().map((node) => {
@@ -94,7 +147,7 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
             });
           const minimumPageLocations: URL[] = pageLocations
             .filter((location, index) => location && index % 2 === 0).slice(1);
-          const imageRegExpText = StringUtil.escapeRegExp(_.first(pageLocations).href);
+          const imageRegExpText = StringUtil.escapeRegExp((_.first(pageLocations) as URL).href);
           const imageRegExp: RegExp = new RegExp(`${imageRegExpText.replace("www", "\\w\\d+")}/[\\w-]+\\.jpg`, "g");
 
           const parsePageImages = (body: any): ISource[] => {
@@ -135,7 +188,6 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
       return this.cloudkicker.get(listUrl)
         .then(({response}) => {
           this.searchCache.clear();
-          // const $ = cheerio.load(StringUtil.sanitizeBodyTags(response.body.toString()));
           const $ = cheerio.load(response.body);
           const selector = [
             "#wrapper_body", "div", "div.series_col", "div.series_alpha",

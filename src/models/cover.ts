@@ -1,6 +1,7 @@
 import { URL } from "url";
 export enum CoverSide {
-  Front,
+  Unknown = 0,
+  Front = 1,
   Back,
   Side,
   Full,

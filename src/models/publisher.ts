@@ -1,5 +1,8 @@
+import { ISource } from "./source";
+
 export interface IPublisher {
-  original?: string;
-  magazine?: string;
-  licensed?: boolean;
+  englishPublisher: ISource;
+  licensed: boolean;
+  magazine: ISource;
+  publisher: ISource;
 }

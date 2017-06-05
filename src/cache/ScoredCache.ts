@@ -7,13 +7,30 @@ export interface ICacheScoredResult<T> extends ICacheResult<T> {
 }
 
 export class ScoredCache<T> extends Cache<T> {
+  public get(key: string): ICacheResult<T> {
+    key = StringUtil.normalize(key);
+    return {
+      key: (key),
+      value: (this.internalCache[key]),
+    };
+  }
+
+  public clear(): ScoredCache<T> {
+    return super.clear() as ScoredCache<T>;
+  }
+
   public update(key: string, value: T): ScoredCache<T> {
     return super.update(StringUtil.normalize(key), value) as ScoredCache<T>;
   }
 
+  public remove(key: string): ScoredCache<T> {
+    return super.remove(key) as ScoredCache<T>;
+  }
+
   public bestMatch(query: string): ICacheScoredResult<T> {
     const queryNormalized = StringUtil.normalize(query);
-    const key = queryNormalized in this.internalCache ? queryNormalized : _.first(this.keysSortedBy(queryNormalized));
+    const key: string = queryNormalized in this.internalCache ?
+      queryNormalized : _.first(this.keysSortedBy(queryNormalized)) as string;
     const score = StringUtil.similarity(queryNormalized, key);
     const value = this.internalCache[key];
     return {

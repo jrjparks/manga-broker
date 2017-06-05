@@ -5,8 +5,10 @@ import { URL } from "url";
 import { CoverSide, ICover } from "../models/cover";
 import { IDetails } from "../models/details";
 import { Genre } from "../models/genre";
+import { IPublisher } from "../models/publisher";
 import { ISearchOptions, ISearchResults } from "../models/search";
 import { ISource } from "../models/source";
+import { Status } from "../models/status";
 import { Type } from "../models/type";
 
 import { ICacheScoredResult } from "../cache/ScoredCache";
@@ -67,8 +69,8 @@ export class MangaUpdates extends ProviderCore implements IProvider {
               const isNovel = name.endsWith("(Novel)");
               const genres: Genre[] = element.find("td:nth-child(2)").text()
                 .split(",").map((genre: string) => genre.trim())
-                .filter((genre: string) => !genre.endsWith("..."))
-                .map((genre: keyof typeof Genre) => Genre[genre]);
+                .map((genre: string) => _.get(Genre, genre, Genre.Unknown))
+                .filter((genre: Genre) => genre !== Genre.Unknown);
               const location = new URL(titleNode.attr("href"));
               const id = parseInt(location.searchParams.get("id") || "-1", 10);
               const releaseYear = parseInt(element.find("td:nth-child(3)").text(), 10);
@@ -136,8 +138,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
 
           // Type
           const typeNode = contentNode.find("div:nth-child(3) > div > div:nth-child(5)");
-          const typeKey: keyof typeof Type = typeNode.text().trim() as keyof typeof Type;
-          const type: Type = Type[typeKey];
+          const type: Type = _.get(Type, typeNode.text().trim(), Type.Unknown);
 
           // Name
           const nameNode = contentNode.find("div:nth-child(1) > span.releasestitle.tabletitle");
@@ -167,10 +168,11 @@ export class MangaUpdates extends ProviderCore implements IProvider {
           const associatedNames: ISource[] = associatedNamesNode.children().toArray()
             .map((node) => {
               const element = $(node);
+              const associatedName = element.text().trim();
               const location = new URL(this.baseURL.href);
               location.pathname = element.attr("href");
               return {
-                name: "",
+                name: (associatedName),
                 source: (location),
               };
             });
@@ -181,18 +183,99 @@ export class MangaUpdates extends ProviderCore implements IProvider {
             .map((node) => parseLinkBind(node))
             .filter((groupsScanulatingSource) => Boolean(groupsScanulatingSource)) as ISource[];
 
+          // Status
+          const statusNode = contentNode.find("div:nth-child(3) > div > div:nth-child(20)");
+          const status: Status = _.get(Status, statusNode.text().trim(), Status.Unknown);
+
+          // Completely Scanulated
+          const completelyScanulatedNode = contentNode.find("div:nth-child(3) > div > div:nth-child(23)");
+          const completelyScanulated = completelyScanulatedNode.text().trim().toLowerCase() === "yes";
+
+          // Genres
+          const genres: Genre[] = contentNode.find("div:nth-child(4) > div > div:nth-child(5) > a:has(>u)").toArray()
+            .map((node) => $(node).text().trim())
+            .map((genre: string) => _.get(Genre, genre, Genre.Unknown))
+            .filter((genre: Genre) => genre !== Genre.Unknown);
+
+          const categories = contentNode.find("#ajax_tag_data > ul > li > a")
+            .toArray().map((node) => $(node).text().trim());
+
+          const categoryRecommendations: ISource[] = contentNode.find("div:nth-child(4) > div > div:nth-child(11) > a")
+            .toArray().map((node) => {
+              const element = $(node);
+              const categoryRecommendation = element.text().trim();
+              const location = new URL(element.attr("href"), this.baseURL.href);
+              return {
+                name: (categoryRecommendation),
+                source: (location),
+              };
+            });
+
+          let recommendationsNode: Cheerio = contentNode.find("#div_recom_more > div > a");
+          if (recommendationsNode.length === 0) { recommendationsNode = contentNode.find("#div_recom_link > a"); }
+          const recommendations: ISource[] = recommendationsNode.toArray().map((node) => {
+            const element = $(node);
+            const recommendation = element.text().trim();
+            const location = new URL(element.attr("href"), this.baseURL.href);
+            return {
+              name: (recommendation),
+              source: (location),
+            };
+          });
+
+          const authors: string[] = contentNode.find("div:nth-child(4) > div > div:nth-child(17) > a")
+            .toArray().map((node) => $(node).text().trim());
+
+          const artists: string[] = contentNode.find("div:nth-child(4) > div > div:nth-child(20) > a")
+            .toArray().map((node) => $(node).text().trim());
+
+          const releaseYear: number =
+            parseInt(contentNode.find("div:nth-child(4) > div > div:nth-child(23)").text(), 10);
+
+          const publisherSourceNode = contentNode.find("div:nth-child(4) > div > div:nth-child(26) > a");
+          const publisherSource: ISource = {
+            name: publisherSourceNode.text().trim(),
+            source: new URL(publisherSourceNode.attr("href"), this.baseURL),
+          };
+          const magazineSourceNode = contentNode.find("div:nth-child(4) > div > div:nth-child(29) > a");
+          const magazineSource: ISource = {
+            name: magazineSourceNode.text().trim(),
+            source: new URL(magazineSourceNode.attr("href"), this.baseURL),
+          };
+          const englishLicensed = contentNode.find("div:nth-child(4) > div > div:nth-child(32)")
+            .text().trim().toLowerCase() === "Yes";
+          const englishPublisherSourceNode = contentNode.find("div:nth-child(4) > div > div:nth-child(35) > a");
+          const englishPublisherSource: ISource = {
+            name: englishPublisherSourceNode.text().trim(),
+            source: new URL(englishPublisherSourceNode.attr("href"), this.baseURL),
+          };
+          const publisher: IPublisher = {
+            englishPublisher: (englishPublisherSource),
+            licensed: (englishLicensed),
+            magazine: (magazineSource),
+            publisher: (publisherSource),
+          };
+
           // TODO: Complete MangaUpdates details
           return {
             about: {
+              artists: (artists),
               associatedNames: (associatedNames),
+              authors: (authors),
               covers: (covers),
               description: (description),
+              genres: (genres),
+              releaseYear: (releaseYear),
+              status: (status),
               type: (type),
             },
             meta: {
-              categoryRecommendations: [],
+              categories: (categories),
+              categoryRecommendations: (categoryRecommendations),
+              completelyScanulated: (completelyScanulated),
               groupsScanulating: (groupsScanulating),
-              recommendations: [],
+              publisher: (publisher),
+              recommendations: (recommendations),
               related: (related),
             },
             name: (name),

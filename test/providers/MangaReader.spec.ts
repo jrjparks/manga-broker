@@ -114,10 +114,8 @@ describe("MangaReader Tests", () => {
         source: new URL("http://www.mangareader.net/onepunch-man"),
       };
       return mangareader.details(source)
-        .then(utils.unexpectedPromise)
-        .catch((error) => {
-          expect(error).to.be.ok;
-          expect(error.message).to.be.equal("This function is not supported by this provider.");
+        .then((details) => {
+          expect(details).to.be.ok;
         });
     });
 

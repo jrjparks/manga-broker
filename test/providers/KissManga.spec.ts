@@ -5,7 +5,11 @@ import { CloudKicker } from "cloudkicker";
 import * as sinon from "sinon";
 import { URL } from "url";
 import { Genre } from "../../src/models/genre";
+
+import { ICover } from "../../src/models/cover";
 import { ISource } from "../../src/models/source";
+import { Status } from "../../src/models/status";
+
 import { KissManga } from "../../src/providers/KissManga";
 import * as utils from "../utils";
 
@@ -62,11 +66,11 @@ describe("KissManga Tests", () => {
           .resolves({ response: { body: utils.getFixture("KissManga/Search_Manga_Blah_Blah.html") } });
       }
       return kissmanga.search("Blah Blah")
-      .then(utils.unexpectedPromise)
-      .catch((error: Error) => {
-        expect(error).to.be.ok;
-        expect(error.message).to.include("Title not found.");
-      });
+        .then(utils.unexpectedPromise)
+        .catch((error: Error) => {
+          expect(error).to.be.ok;
+          expect(error.message).to.include("Title not found.");
+        });
     });
 
     it("should return chapters for 'Knights & Magic'", () => {
@@ -179,7 +183,6 @@ describe("KissManga Tests", () => {
           expect(details.name).to.be.equal("Knights & Magic");
 
           if (!details.about) { throw new Error("about is not defined"); }
-          expect(details.about).to.be.ok;
           if (!details.about.genres) { throw new Error("about.genres is not defined"); }
           expect(details.about.genres).to.be.ok;
           expect(details.about.genres).to.have.members([
@@ -187,6 +190,22 @@ describe("KissManga Tests", () => {
             Genre.Fantasy, Genre.Harem, Genre.Mecha, Genre.Romance,
             Genre.SchoolLife, Genre.Seinen,
           ]);
+          expect(details.about.description).to.include("Ernesti Echevalier (Eru)");
+          expect(details.about.description).to.include("Adeltrud Olter");
+          expect(details.about.description).to.include("Silhouette Knight");
+          if (local) {
+            if (!details.about.covers) { throw new Error("about.covers is not defined"); }
+            expect(details.about.covers).to.have.lengthOf(1);
+            const cover: ICover = details.about.covers[0];
+            if (!cover.Thumbnail) { throw new Error("cover.Thumbnail is not defined"); }
+            expect(cover.Thumbnail.href)
+              .to.be.equal("http://kissmanga.com/Uploads/Etc/9-18-2016/4351472c70d195.jpg");
+          }
+
+          if (!details.meta) { throw new Error("meta is not defined"); }
+          if (!details.meta.status) { throw new Error("meta.status is not defined"); }
+          expect(details.meta.status).to.be.ok;
+          expect(details.meta.status).to.be.equal(Status.Ongoing);
         });
     });
   };

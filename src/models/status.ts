@@ -1,5 +1,6 @@
 export enum Status {
-  Ongoing,
+  Unknown = 0,
+  Ongoing = 1,
   Completed,
   Cancelled,
 }

@@ -6,10 +6,12 @@ import { URL } from "url";
 import vm = require("vm");
 
 import { IChapter } from "../models/chapter";
+import { CoverSide, ICover } from "../models/cover";
 import { IDetails } from "../models/details";
 import { Genre } from "../models/genre";
 import { ISearchResults } from "../models/search";
 import { ISource } from "../models/source";
+import { Status } from "../models/status";
 
 import { ICacheScoredResult } from "../cache/ScoredCache";
 import { ISourceProvider, ProviderCore } from "../provider";
@@ -68,19 +70,38 @@ export class KissManga extends ProviderCore implements ISourceProvider {
             });
           const genres: Genre[] = detailsNode.find("p:nth-child(3) > a").toArray()
             .map((genreNode: CheerioElement) => $(genreNode).text().trim().replace(/[^\w]/, ""))
-            .map((genre: keyof typeof Genre) => Genre[genre]);
+            .map((genre: string) => _.get(Genre, genre, Genre.Unknown))
+            .filter((genre: Genre) => genre !== Genre.Unknown);
           const authorArtist: string[] = detailsNode.find("p:nth-child(4) > a").toArray()
             .map((node) => $(node).text().trim());
+
+          const statusText: RegExpMatchArray = detailsNode.find("p:nth-child(5)").text()
+            .match(/status:\s(\w+)/i) as RegExpMatchArray;
+          const status: Status = _.get(Status, statusText[1], Status.Unknown);
+
+          const description = detailsNode.find("p:nth-child(7)").text().trim();
+
+          const coverNode = $("#rightside > div:nth-child(1) > div.barContent > div:nth-child(2) > img");
+          const coverLocation = new URL(coverNode.attr("src"));
+          const covers: ICover[] = coverNode ? [{
+            MIME: "image/jpeg",
+            Thumbnail: (coverLocation),
+            side: CoverSide.Front,
+            volume: 1,
+          }] : [];
 
           return {
             about: {
               artists: (authorArtist),
               associatedNames: (associatedNames),
               authors: (authorArtist),
+              covers: (covers),
+              description: (description),
               genres: (genres),
             },
             meta: {
               isNovel: false,
+              status: (status),
             },
             name: (name),
             source: (source.source),

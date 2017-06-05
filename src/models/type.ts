@@ -1,5 +1,6 @@
 export enum Type {
-  Manga,
+  Unknown = 0,
+  Manga = 1,
   Manhwa,
   Manhua,
 }
