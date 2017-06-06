@@ -39,8 +39,8 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
       return this.cloudkicker.get(source.source)
         .then(({response}) => {
           const $ = cheerio.load(response.body);
-          const name = $("#mangaproperties > h1").text().trim();
           const propertiesNode = $("#mangaproperties > table > tbody");
+          const name = propertiesNode.find("tr:nth-child(1) > td:nth-child(2) > h2").text().trim();
           const associatedNames: ISource[] = propertiesNode
             .find("tr:nth-child(2) > td:nth-child(2)")
             .text().split(",").map((associatedName) => {

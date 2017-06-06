@@ -80,6 +80,11 @@ describe("MangaPanda Tests", () => {
         name: "Kapon (>_<)!",
       },
     ].forEach(({name, href, fixture}) => {
+      const source: ISource = {
+        name: (name),
+        source: new URL(href),
+      };
+
       it(`should return search result for '${name}'`, () => {
         if (local) {
           sandbox.stub(cloudkicker, "get")
@@ -95,11 +100,15 @@ describe("MangaPanda Tests", () => {
           });
       });
 
+      it(`should return details for '${name}'`, () => {
+        return mangapanda.details(source)
+          .then((details) => {
+            expect(details).to.be.ok;
+            expect(details.name).to.be.equal(name);
+          });
+      });
+
       it(`should return chapters for '${name}'`, () => {
-        const source: ISource = {
-          name: (name),
-          source: new URL(href),
-        };
         if (local) {
           sandbox.stub(cloudkicker, "get")
             .withArgs(sinon.match({ href: (source.source.href) }))

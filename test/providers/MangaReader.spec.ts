@@ -70,6 +70,11 @@ describe("MangaReader Tests", () => {
         name: "Kapon (>_<)!",
       },
     ].forEach(({name, href, fixture}) => {
+      const source: ISource = {
+        name: (name),
+        source: new URL(href),
+      };
+
       it(`should return search result for '${name}'`, () => {
         if (local) {
           sandbox.stub(cloudkicker, "get")
@@ -85,11 +90,15 @@ describe("MangaReader Tests", () => {
           });
       });
 
+      it(`should return details for '${name}'`, () => {
+        return mangareader.details(source)
+          .then((details) => {
+            expect(details).to.be.ok;
+            expect(details.name).to.be.equal(name);
+          });
+      });
+
       it(`should return chapters for '${name}'`, () => {
-        const source: ISource = {
-          name: (name),
-          source: new URL(href),
-        };
         if (local) {
           sandbox.stub(cloudkicker, "get")
             .withArgs(sinon.match({ href: (source.source.href) }))
@@ -106,17 +115,6 @@ describe("MangaReader Tests", () => {
             expect(chapter.chapter).to.be.equal(1);
           });
       });
-    });
-
-    it("should fail to return details", () => {
-      const source: ISource = {
-        name: "Test Source",
-        source: new URL("http://www.mangareader.net/onepunch-man"),
-      };
-      return mangareader.details(source)
-        .then((details) => {
-          expect(details).to.be.ok;
-        });
     });
 
     it("should return pages for 'Onepunch-Man' 'Chapter 1'", () => {
