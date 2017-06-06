@@ -29,8 +29,8 @@ describe("KissManga Tests", () => {
   const generateTests = (local: boolean = true) => {
     it("should return search result for 'One Punch-Man'", () => {
       if (local) {
-        const get = sandbox.stub(cloudkicker, "get");
-        get.withArgs(sinon.match({ href: "https://kissmanga.com/Search/Manga?keyword=One+Punch-Man" }))
+        const post = sandbox.stub(cloudkicker, "post");
+        post.withArgs(sinon.match({ href: "http://kissmanga.com/AdvanceSearch" }))
           .resolves({ response: { body: utils.getFixture("KissManga/Search_Manga_One_Punch-Man.html") } });
       }
       return kissmanga.search("One Punch-Man")
@@ -39,14 +39,14 @@ describe("KissManga Tests", () => {
           expect(result.name).to.be.ok;
           expect(result.name).to.be.equal("Onepunch-Man");
           expect(result.source).to.be.ok;
-          expect(result.source.href).to.be.equal("https://kissmanga.com/Manga/Onepunch-Man");
+          expect(result.source.href).to.be.equal("http://kissmanga.com/Manga/Onepunch-Man");
         });
     });
 
     it("should return search result for 'One Punch-Man (ONE)'", () => {
       if (local) {
-        const get = sandbox.stub(cloudkicker, "get");
-        get.withArgs(sinon.match({ href: "https://kissmanga.com/Search/Manga?keyword=One+Punch-Man+%28ONE%29" }))
+        const post = sandbox.stub(cloudkicker, "post");
+        post.withArgs(sinon.match({ href: "http://kissmanga.com/AdvanceSearch" }))
           .resolves({ response: { body: utils.getFixture("KissManga/Search_Manga_One_Punch-Man.html") } });
       }
       return kissmanga.search("One Punch-Man (ONE)")
@@ -55,14 +55,14 @@ describe("KissManga Tests", () => {
           expect(result.name).to.be.ok;
           expect(result.name).to.be.equal("Onepunch-Man (ONE)");
           expect(result.source).to.be.ok;
-          expect(result.source.href).to.be.equal("https://kissmanga.com/Manga/Onepunch-Man-ONE");
+          expect(result.source.href).to.be.equal("http://kissmanga.com/Manga/Onepunch-Man-ONE");
         });
     });
 
     it("should fail search result for 'Blah Blah'", () => {
       if (local) {
-        const get = sandbox.stub(cloudkicker, "get");
-        get.withArgs(sinon.match({ href: "https://kissmanga.com/Search/Manga?keyword=Blah+Blah" }))
+        const post = sandbox.stub(cloudkicker, "post");
+        post.withArgs(sinon.match({ href: "http://kissmanga.com/AdvanceSearch" }))
           .resolves({ response: { body: utils.getFixture("KissManga/Search_Manga_Blah_Blah.html") } });
       }
       return kissmanga.search("Blah Blah")
@@ -76,7 +76,7 @@ describe("KissManga Tests", () => {
     it("should return chapters for 'Knights & Magic'", () => {
       const source: ISource = {
         name: "Knights & Magic",
-        source: new URL("https://kissmanga.com/Manga/Knights-Magic"),
+        source: new URL("http://kissmanga.com/Manga/Knights-Magic"),
       };
       if (local) {
         const get = sandbox.stub(cloudkicker, "get");
@@ -97,13 +97,13 @@ describe("KissManga Tests", () => {
     it("should return pages for 'Knights & Magic' 'Chapter 1'", () => {
       const source: ISource = {
         name: "Let's Ride a Robot",
-        source: new URL("https://kissmanga.com/Manga/Knights-Magic/Ch-001--Let-s-Ride-a-Robot?id=321203"),
+        source: new URL("http://kissmanga.com/Manga/Knights-Magic/Ch-001--Let-s-Ride-a-Robot?id=321203"),
       };
       if (local) {
         const get = sandbox.stub(cloudkicker, "get");
-        get.withArgs(sinon.match({ href: "https://kissmanga.com/Scripts/ca.js" }))
+        get.withArgs(sinon.match({ href: "http://kissmanga.com/Scripts/ca.js" }))
           .resolves({ response: { body: utils.getFixture("KissManga/ca.js") } });
-        get.withArgs(sinon.match({ href: "https://kissmanga.com/Scripts/lo.js" }))
+        get.withArgs(sinon.match({ href: "http://kissmanga.com/Scripts/lo.js" }))
           .resolves({ response: { body: utils.getFixture("KissManga/lo.js") } });
         get.withArgs(sinon.match({ href: (source.source.href) }))
           .resolves({ response: { body: utils.getFixture("KissManga/Knights-Magic-Ch-001.html") } });
@@ -123,7 +123,7 @@ describe("KissManga Tests", () => {
     it("should return chapters for 'Onepunch-Man'", () => {
       const source: ISource = {
         name: "Knights & Magic",
-        source: new URL("https://kissmanga.com/Manga/Onepunch-Man"),
+        source: new URL("http://kissmanga.com/Manga/Onepunch-Man"),
       };
       if (local) {
         const get = sandbox.stub(cloudkicker, "get");
@@ -144,13 +144,13 @@ describe("KissManga Tests", () => {
     it("should return pages for 'Onepunch-Man' 'Chapter 1'", () => {
       const source: ISource = {
         name: "Onepunch-Man _vol.001 ch.001",
-        source: new URL("https://kissmanga.com/Manga/Onepunch-Man/vol-001-ch-001?id=313725"),
+        source: new URL("http://kissmanga.com/Manga/Onepunch-Man/vol-001-ch-001?id=313725"),
       };
       if (local) {
         const get = sandbox.stub(cloudkicker, "get");
-        get.withArgs(sinon.match({ href: "https://kissmanga.com/Scripts/ca.js" }))
+        get.withArgs(sinon.match({ href: "http://kissmanga.com/Scripts/ca.js" }))
           .resolves({ response: { body: utils.getFixture("KissManga/ca.js") } });
-        get.withArgs(sinon.match({ href: "https://kissmanga.com/Scripts/lo.js" }))
+        get.withArgs(sinon.match({ href: "http://kissmanga.com/Scripts/lo.js" }))
           .resolves({ response: { body: utils.getFixture("KissManga/lo.js") } });
         get.withArgs(sinon.match({ href: (source.source.href) }))
           .resolves({ response: { body: utils.getFixture("KissManga/Onepunch-Man-vol-001-ch-001.html") } });
@@ -170,7 +170,7 @@ describe("KissManga Tests", () => {
     it("should return details for 'Knights and Magic'", () => {
       const source: ISource = {
         name: "Knights & Magic",
-        source: new URL("https://kissmanga.com/Manga/Knights-Magic"),
+        source: new URL("http://kissmanga.com/Manga/Knights-Magic"),
       };
       if (local) {
         const get = sandbox.stub(cloudkicker, "get");

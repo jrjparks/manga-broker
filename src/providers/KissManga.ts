@@ -19,7 +19,7 @@ import { stringEnum } from "../StringEnum";
 
 export class KissManga extends ProviderCore implements ISourceProvider {
   public readonly is: string = "KissManga";
-  public readonly baseURL: URL = new URL("https://kissmanga.com");
+  public readonly baseURL: URL = new URL("http://kissmanga.com");
   protected readonly urlDecrypter: KissMangaUrlDecrypter;
 
   constructor(cloudkicker?: CloudKicker) {
@@ -61,8 +61,7 @@ export class KissManga extends ProviderCore implements ISourceProvider {
             .toArray().map((node) => {
               const element = $(node);
               const associatedName: string = element.text().trim();
-              const location = new URL(this.baseURL.href);
-              location.pathname = element.attr("href");
+              const location = new URL(element.attr("href"), this.baseURL.href);
               return {
                 name: (associatedName),
                 source: (location),
@@ -128,8 +127,7 @@ export class KissManga extends ProviderCore implements ISourceProvider {
             const nameParts: string[] = linkElement.text().split(":")
               .map((str) => str.trim()).filter((str) => !!(str));
             const name: string = _.last(nameParts) as string;
-            const location = new URL(this.baseURL.href);
-            location.pathname = linkElement.attr("href");
+            const location = new URL(linkElement.attr("href"), this.baseURL.href);
             const chapterMatch: RegExpMatchArray | null = (_.first(nameParts) as string).match(/\d+$/);
             const chapter = chapterMatch ? parseInt(chapterMatch[0], 10) : undefined;
             chapters.push({
@@ -179,10 +177,21 @@ export class KissManga extends ProviderCore implements ISourceProvider {
     }
     const query: boolean = this.searchCache.isEmpty || result.score < 0.9;
     if (query) {
-      const queryUrl = new URL(this.baseURL.href);
-      queryUrl.pathname = "/Search/Manga";
-      queryUrl.searchParams.set("keyword", title);
-      return this.cloudkicker.get(queryUrl)
+      // const queryUrl = new URL("/Search/Manga", this.baseURL);
+      const queryUrl = new URL("/AdvanceSearch", this.baseURL);
+      const dataMap: { [key: string]: any } = {
+        authorArtist: "",
+        genres: 0,
+        mangaName: (title),
+        status: "",
+      };
+      const data: string = Object.keys(dataMap)
+        .map((key: string) => {
+          return [key, dataMap[key]]
+            .map(encodeURIComponent)
+            .join("=").replace(/undefined$/, "");
+        }).join("&");
+      return this.cloudkicker.post(queryUrl, data, { Referer: queryUrl.href })
         .then(({response}) => {
           const $ = cheerio.load(response.body);
           const selector = [
@@ -194,8 +203,7 @@ export class KissManga extends ProviderCore implements ISourceProvider {
             const element = $(node);
             const name = element.text().trim();
             const value = element.attr("href").trim();
-            const location = new URL(this.baseURL.href);
-            location.pathname = value;
+            const location = new URL(value, this.baseURL);
             return cache.update(name, {
               name: (name),
               source: (location),
@@ -278,8 +286,7 @@ export class KissMangaUrlDecrypter {
   }
 
   private load(script: ScriptType) {
-    const location = new URL(this.baseURL.href);
-    location.pathname = `/Scripts/${script}.js`;
+    const location = new URL(`/Scripts/${script}.js`, this.baseURL.href);
     return this.cloudkicker.get(location);
   }
 
