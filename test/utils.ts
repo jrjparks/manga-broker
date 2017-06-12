@@ -4,7 +4,7 @@ import * as sinon from "sinon";
 import fs = require("fs");
 import { URL } from "url";
 import { ISource } from "../src/models/source";
-import { IProvider, ISourceProvider } from "../src/provider";
+import { IAuthentableProvider, IProvider, ISourceProvider } from "../src/provider";
 export const CI = process.env.CI;
 
 export function getFixture(path: string) {
@@ -49,6 +49,43 @@ export function providerBadSourceHostTests(provider: IProvider | ISourceProvider
       return provider.pages(source)
         .then(unexpectedPromise)
         .catch(badSourceErrorCatch);
+    });
+  }
+}
+
+export function providerNotAuthTests(provider: (IProvider | ISourceProvider) & IAuthentableProvider, href: string) {
+  const source: ISource = {
+    name: href || "example.com",
+    source: new URL(href || "http://example.com/"),
+  };
+  const notAuthErrorCatch = (error: Error) => {
+    expect(error).to.be.ok;
+    expect(error.message).to.be.ok;
+    expect(error.message).to.be.equal("Provider requires authentication.");
+  };
+  const isSourceProvider = (iface: any): iface is ISourceProvider => {
+    return iface.chapters !== undefined;
+  };
+  it(`details should fail for no auth.`, () => {
+    return provider.details(source)
+      .then(unexpectedPromise)
+      .catch(notAuthErrorCatch);
+  });
+  it(`search should fail for no auth.`, () => {
+    return provider.search("test")
+      .then(unexpectedPromise)
+      .catch(notAuthErrorCatch);
+  });
+  if (isSourceProvider(provider)) {
+    it(`chapters should fail for no auth.`, () => {
+      return provider.chapters(source)
+        .then(unexpectedPromise)
+        .catch(notAuthErrorCatch);
+    });
+    it(`pages should fail for no auth.`, () => {
+      return provider.pages(source)
+        .then(unexpectedPromise)
+        .catch(notAuthErrorCatch);
     });
   }
 }
