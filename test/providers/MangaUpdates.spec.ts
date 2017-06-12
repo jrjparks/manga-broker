@@ -10,7 +10,8 @@ import { ISource } from "../../src/models/source";
 import { MangaUpdates } from "../../src/providers/MangaUpdates";
 import * as utils from "../utils";
 
-describe("MangaUpdates Tests", () => {
+describe("MangaUpdates Tests", function() {
+  this.retries(2);
   const cloudkicker: CloudKicker = new CloudKicker();
   const mangaupdates = new MangaUpdates(cloudkicker);
   let sandbox: sinon.SinonSandbox;

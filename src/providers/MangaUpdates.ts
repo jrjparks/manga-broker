@@ -18,7 +18,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
   public readonly is: string = "MangaUpdates";
   public readonly baseURL: URL = new URL("https://www.mangaupdates.com");
 
-  public search(title: string, options?: ISearchOptions): Promise<ISearchResults> {
+  public async search(title: string, options?: ISearchOptions): Promise<ISearchResults> {
     options = _.extend({
       excludeNovels: true,
       fuzzy: false,
@@ -44,8 +44,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
           page: 1,
           results: [value],
         } as ISearchResults;
-      })
-      .catch(() => this.cloudkicker.get(queryURL)
+      }).catch(() => this.cloudkicker.get(queryURL, { Referer: queryURL.href })
         .then(({response}) => {
           const $ = cheerio.load(response.body);
 
@@ -95,20 +94,20 @@ export class MangaUpdates extends ProviderCore implements IProvider {
           }
           if (results.length === 0) { throw new Error("Title not found."); }
           return {
-            hasNext: (hasNextPage),
-            hasPrev: (hasPreviousPage),
+            hasNextPage: (hasNextPage),
+            hasPreviousPage: (hasPreviousPage),
             options: (options),
             page: (page),
             results: (results),
-          };
+          } as ISearchResults;
         }));
   }
 
-  public details(source: ISource): Promise<IDetails> {
+  public async details(source: ISource): Promise<IDetails> {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
     } else {
-      return this.cloudkicker.get(source.source)
+      return this.cloudkicker.get(source.source, { Referer: source.source.href })
         .then(({response}) => {
           const $ = cheerio.load(response.body);
           // const parseLink = (node: any, param: string): ISource | undefined => {
@@ -285,8 +284,8 @@ export class MangaUpdates extends ProviderCore implements IProvider {
     }
   }
 
-  protected querySearchCache(title: string): Promise<ICacheScoredResult<ISource>> {
-    return new Promise((resolve, reject) => {
+  protected async querySearchCache(title: string): Promise<ICacheScoredResult<ISource>> {
+    return new Promise<ICacheScoredResult<ISource>>((resolve, reject) => {
       const result = this.searchCache.bestMatch(title);
       if (result.score >= 0.9) {
         return resolve(result);

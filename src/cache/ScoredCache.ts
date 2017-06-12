@@ -15,16 +15,12 @@ export class ScoredCache<T> extends Cache<T> {
     };
   }
 
-  public clear(): ScoredCache<T> {
-    return super.clear() as ScoredCache<T>;
+  public update(key: string, value: T): this {
+    return super.update(StringUtil.normalize(key), value);
   }
 
-  public update(key: string, value: T): ScoredCache<T> {
-    return super.update(StringUtil.normalize(key), value) as ScoredCache<T>;
-  }
-
-  public remove(key: string): ScoredCache<T> {
-    return super.remove(key) as ScoredCache<T>;
+  public remove(key: string): this {
+    return super.remove(StringUtil.normalize(key));
   }
 
   public bestMatch(query: string): ICacheScoredResult<T> {

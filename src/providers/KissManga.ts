@@ -32,7 +32,7 @@ export class KissManga extends ProviderCore implements ISourceProvider {
     this.urlDecrypter.clearCache();
   }
 
-  public search(title: string, options?: any): Promise<ISearchResults> {
+  public async search(title: string, options?: any): Promise<ISearchResults> {
     return this.querySearchCache(title)
       .then((result) => {
         return {
@@ -45,11 +45,11 @@ export class KissManga extends ProviderCore implements ISourceProvider {
       });
   }
 
-  public details(source: ISource): Promise<IDetails> {
+  public async details(source: ISource): Promise<IDetails> {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
     } else {
-      return this.cloudkicker.get(source.source)
+      return this.cloudkicker.get(source.source, { Referer: source.source.href })
         .then(({response}) => {
           const $ = cheerio.load(response.body);
           const selector = [
@@ -109,11 +109,11 @@ export class KissManga extends ProviderCore implements ISourceProvider {
     }
   }
 
-  public chapters(source: ISource): Promise<IChapter[]> {
+  public async chapters(source: ISource): Promise<IChapter[]> {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
     } else {
-      return this.cloudkicker.get(source.source)
+      return this.cloudkicker.get(source.source, { Referer: source.source.href })
         .then(({response}) => {
           const $ = cheerio.load(response.body);
           const selector = [
@@ -123,11 +123,11 @@ export class KissManga extends ProviderCore implements ISourceProvider {
           const nodes = $(selector);
           return nodes.toArray().reverse().reduce((chapters, node) => {
             const element = $(node);
-            const linkElement: Cheerio = element.find("a");
-            const nameParts: string[] = linkElement.text().split(":")
+            const sourceElement: Cheerio = element.find("a");
+            const nameParts: string[] = sourceElement.text().split(":")
               .map((str) => str.trim()).filter((str) => !!(str));
             const name: string = _.last(nameParts) as string;
-            const location = new URL(linkElement.attr("href"), this.baseURL.href);
+            const location = new URL(sourceElement.attr("href"), this.baseURL.href);
             const chapterMatch: RegExpMatchArray | null = (_.first(nameParts) as string).match(/\d+$/);
             const chapter = chapterMatch ? parseInt(chapterMatch[0], 10) : undefined;
             chapters.push({
@@ -141,11 +141,11 @@ export class KissManga extends ProviderCore implements ISourceProvider {
     }
   }
 
-  public pages(source: ISource): Promise<ISource[]> {
+  public async pages(source: ISource): Promise<ISource[]> {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
     } else {
-      return this.cloudkicker.get(source.source)
+      return this.cloudkicker.get(source.source, { Referer: source.source.href })
         .then(({response}) => {
           const encryptedUrlRegex: RegExp = /wrapKA\(\"([\w\/\+\=]+)\"\)/g;
           const encryptedUrls: string[] = [];
@@ -170,7 +170,7 @@ export class KissManga extends ProviderCore implements ISourceProvider {
     }
   }
 
-  protected querySearchCache(title: string): Promise<ICacheScoredResult<ISource>> {
+  protected async querySearchCache(title: string): Promise<ICacheScoredResult<ISource>> {
     let result: ICacheScoredResult<ISource> = { key: "", value: undefined, score: 0 };
     if (!this.searchCache.isEmpty) {
       result = this.searchCache.bestMatch(title);
@@ -256,41 +256,39 @@ export class KissMangaUrlDecrypter {
     this.cryptoScript = undefined;
   }
 
-  public getWrapKA(body: any): Promise<(hash: string) => Promise<string>> {
+  public async getWrapKA(body: any): Promise<(hash: string) => Promise<string>> {
     if (!_.isString(body)) { body = body.toString(); }
     const decryptionKeyMatch: RegExpMatchArray = body.match(/\>\s*(.+CryptoJS.SHA256\(chko\))/);
     if (!decryptionKeyMatch || decryptionKeyMatch.length < 2) {
       return Promise.reject(new Error("Unable to locate decryption key."));
     } else {
       const decryptionKey = decryptionKeyMatch[1];
-      return this.loadScripts()
-        .then((cryptoScript) => {
-          const decryptionKeyScript = new vm.Script(decryptionKey);
-          const decryptionKeySandbox = this.sandbox;
-          cryptoScript.runInContext(decryptionKeySandbox, this.vmOptions);
-          decryptionKeyScript.runInContext(decryptionKeySandbox, this.vmOptions);
-          const wrapKA = (hash: string): Promise<string> => {
-            return new Promise((resolve, reject) => {
-              try {
-                const decryptionKeyMap = (decryptionKeySandbox as { document: { [key: string]: string } }).document;
-                if (!(hash in decryptionKeyMap)) {
-                  vm.runInContext(`calcHash("${hash}");`, decryptionKeySandbox, this.vmOptions);
-                }
-                return resolve(decryptionKeyMap[hash]);
-              } catch (error) { return reject(error); }
-            });
-          };
-          return wrapKA;
+      const cryptoScript = await this.loadScripts();
+      const decryptionKeyScript = new vm.Script(decryptionKey);
+      const decryptionKeySandbox = this.sandbox;
+      cryptoScript.runInContext(decryptionKeySandbox, this.vmOptions);
+      decryptionKeyScript.runInContext(decryptionKeySandbox, this.vmOptions);
+      const wrapKA = (hash: string): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          try {
+            const decryptionKeyMap = (decryptionKeySandbox as { document: { [key: string]: string } }).document;
+            if (!(hash in decryptionKeyMap)) {
+              vm.runInContext(`calcHash("${hash}");`, decryptionKeySandbox, this.vmOptions);
+            }
+            return resolve(decryptionKeyMap[hash]);
+          } catch (error) { return reject(error); }
         });
+      };
+      return wrapKA;
     }
   }
 
-  private load(script: ScriptType) {
+  private async load(script: ScriptType) {
     const location = new URL(`/Scripts/${script}.js`, this.baseURL.href);
-    return this.cloudkicker.get(location);
+    return await this.cloudkicker.get(location);
   }
 
-  private loadScripts(): Promise<vm.Script> {
+  private async loadScripts(): Promise<vm.Script> {
     if (this.cryptoScript) {
       return Promise.resolve(this.cryptoScript);
     } else {

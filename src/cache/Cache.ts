@@ -31,17 +31,17 @@ export class Cache<T> {
     };
   }
 
-  public clear(): Cache<T> {
+  public clear(): this {
     this.keys.forEach((key) => delete this.internalCache[key]);
     return this;
   }
 
-  public update(key: string, value: T): Cache<T> {
+  public update(key: string, value: T): this {
     this.internalCache[key] = value;
     return this;
   }
 
-  public remove(key: string): Cache<T> {
+  public remove(key: string): this {
     delete this.internalCache[key];
     return this;
   }

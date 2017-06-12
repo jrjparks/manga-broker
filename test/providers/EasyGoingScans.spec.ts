@@ -8,7 +8,8 @@ import { ISource } from "../../src/models/source";
 import { EasyGoingScans } from "../../src/providers/EasyGoingScans";
 import * as utils from "../utils";
 
-describe("EasyGoingScans Tests", () => {
+describe("EasyGoingScans Tests", function() {
+  this.retries(2);
   const cloudkicker: CloudKicker = new CloudKicker();
   const egscans = new EasyGoingScans(cloudkicker);
   let sandbox: sinon.SinonSandbox;

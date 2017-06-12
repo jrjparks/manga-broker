@@ -13,7 +13,8 @@ import { Status } from "../../src/models/status";
 import { KissManga } from "../../src/providers/KissManga";
 import * as utils from "../utils";
 
-describe("KissManga Tests", () => {
+describe("KissManga Tests", function() {
+  this.retries(2);
   const cloudkicker: CloudKicker = new CloudKicker();
   const kissmanga = new KissManga(cloudkicker);
   let sandbox: sinon.SinonSandbox;
@@ -35,6 +36,7 @@ describe("KissManga Tests", () => {
       }
       return kissmanga.search("One Punch-Man")
         .then(({results}) => {
+          expect(results).to.be.ok;
           const result = results[0];
           expect(result.name).to.be.ok;
           expect(result.name).to.be.equal("Onepunch-Man");

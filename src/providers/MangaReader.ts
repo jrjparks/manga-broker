@@ -19,7 +19,7 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
   public readonly is: string = "MangaReader";
   public readonly baseURL: URL = new URL("http://www.mangareader.net");
 
-  public search(title: string, options?: any): Promise<ISearchResults> {
+  public async search(title: string, options?: any): Promise<ISearchResults> {
     return this.querySearchCache(title)
       .then((result) => {
         return {
@@ -32,11 +32,11 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
       });
   }
 
-  public details(source: ISource): Promise<IDetails> {
+  public async details(source: ISource): Promise<IDetails> {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
     } else {
-      return this.cloudkicker.get(source.source)
+      return this.cloudkicker.get(source.source, { Referer: source.source.href })
         .then(({response}) => {
           const $ = cheerio.load(response.body);
           const propertiesNode = $("#mangaproperties > table > tbody");
@@ -90,11 +90,11 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
     }
   }
 
-  public chapters(source: ISource): Promise<IChapter[]> {
+  public async chapters(source: ISource): Promise<IChapter[]> {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
     } else {
-      return this.cloudkicker.get(source.source)
+      return this.cloudkicker.get(source.source, { Referer: source.source.href })
         .then(({response}) => {
           const $ = cheerio.load(response.body);
           const selector = [
@@ -123,7 +123,7 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
     }
   }
 
-  public pages(source: ISource): Promise<ISource[]> {
+  public async pages(source: ISource): Promise<ISource[]> {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
     } else {
@@ -135,7 +135,7 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
           source: location,
         };
       };
-      return this.cloudkicker.get(source.source)
+      return this.cloudkicker.get(source.source, { Referer: source.source.href })
         .then(({response}) => {
           const $ = cheerio.load(response.body);
           const pageLocations: URL[] = $("#pageMenu > option")
@@ -151,9 +151,7 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
           const imageRegExp: RegExp = new RegExp(`${imageRegExpText.replace("www", "\\w\\d+")}/[\\w-]+\\.jpg`, "g");
 
           const parsePageImages = (body: any): ISource[] => {
-            if (!_.isString(body)) {
-              body = body.toString();
-            }
+            if (!_.isString(body)) { body = body.toString(); }
             const pageImages: RegExpMatchArray | null = body.match(imageRegExp);
             if (!pageImages) {
               throw new Error(`Unable to parse images from ${source.source.href}`);
@@ -165,7 +163,7 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
 
           return minimumPageLocations.reduce((chain, pageLocation) => {
             return chain.then(() => {
-              return this.cloudkicker.get(pageLocation).then((cfResponse) => {
+              return this.cloudkicker.get(pageLocation, { Referer: pageLocation.href }).then((cfResponse) => {
                 const pageResponse = cfResponse.response;
                 pages.push(...parsePageImages(pageResponse.body));
               });
@@ -179,13 +177,13 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
     }
   }
 
-  protected getSearchCache(): Promise<ScoredCache<ISource>> {
+  protected async getSearchCache(): Promise<ScoredCache<ISource>> {
     if (!this.searchCache.isEmpty) {
       return Promise.resolve(this.searchCache);
     } else {
       const listUrl = new URL(this.baseURL.href);
       listUrl.pathname = "alphabetical";
-      return this.cloudkicker.get(listUrl)
+      return this.cloudkicker.get(listUrl, { Referer: listUrl.href })
         .then(({response}) => {
           this.searchCache.clear();
           const $ = cheerio.load(response.body);
@@ -210,9 +208,9 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
     }
   }
 
-  protected querySearchCache(title: string): Promise<ICacheScoredResult<ISource>> {
+  protected async querySearchCache(title: string): Promise<ICacheScoredResult<ISource>> {
     return this.getSearchCache()
-      .then((cache) => new Promise((resolve, reject) => {
+      .then((cache) => new Promise<ICacheScoredResult<ISource>>((resolve, reject) => {
         const result = cache.bestMatch(title);
         if (result.score >= 0.9) {
           return resolve(result);

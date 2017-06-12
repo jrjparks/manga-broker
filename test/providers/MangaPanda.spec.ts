@@ -9,7 +9,8 @@ import { ISource } from "../../src/models/source";
 import { MangaPanda } from "../../src/providers/MangaPanda";
 import * as utils from "../utils";
 
-describe("MangaPanda Tests", () => {
+describe("MangaPanda Tests", function() {
+  this.retries(2);
   const cloudkicker: CloudKicker = new CloudKicker();
   const mangapanda = new MangaPanda(cloudkicker);
   let sandbox: sinon.SinonSandbox;
@@ -130,7 +131,7 @@ describe("MangaPanda Tests", () => {
     it("should return pages for 'Onepunch-Man' 'Chapter 1'", () => {
       if (local) {
         const get = sandbox.stub(cloudkicker, "get");
-        _.range(1, 20, 2).forEach((pageNumber) => {
+        _.range(1, 20 + 1, 2).forEach((pageNumber) => {
           get.withArgs(sinon.match({ href: `http://www.mangapanda.com/onepunch-man/1/${pageNumber}` }))
             .resolves({ response: { body: utils.getFixture(`MangaPanda/onepunch-man-1/${pageNumber}.html`) } });
         });

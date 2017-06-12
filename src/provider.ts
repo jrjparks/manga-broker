@@ -20,7 +20,8 @@ export interface ISourceProvider extends IProvider {
 }
 
 export interface IAuthentableProvider extends IProvider {
-  authenticate(username: string, password: string): Promise<IAuthentableProvider>;
+  authenticate(username: string, password: string): Promise<this>;
+  deauthenticate(): Promise<this>;
 }
 
 export class ProviderCore {

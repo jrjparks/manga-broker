@@ -7,7 +7,8 @@ import { URL } from "url";
 import { KissMangaUrlDecrypter } from "../../src/providers/KissManga";
 import * as utils from "../utils";
 
-describe("KissMangaUrlDecrypter Tests", () => {
+describe("KissMangaUrlDecrypter Tests", function() {
+  this.retries(2);
   const cloudkicker: CloudKicker = new CloudKicker();
   const baseUrl = new URL("https://kissmanga.com");
   let kissmangaurldecrypter: KissMangaUrlDecrypter;
@@ -70,7 +71,7 @@ describe("KissMangaUrlDecrypter Tests", () => {
         expectedDecryptedUrl: "http://2.bp.blogspot.com/nfas_rLGMAEv8HNhK1M0Y792vW8lldAp7swT70lm9i_NvbFOI46scoXbAjuNd10iBfMknxGJfi7o0w=s0?title=038_1474181393.jpg",
       },
     ].forEach(({encryptedUrl, expectedDecryptedUrl}, index) => {
-      it(`should decode encrypted url #${index}`, () => {
+      it(`should decode encrypted url #${index + 1}`, () => {
         return kissmangaurldecrypter.getWrapKA(testPageContent)
           .then((wrapKA) => wrapKA(encryptedUrl))
           .then((decryptedUrl) => {

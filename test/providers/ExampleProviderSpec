@@ -8,7 +8,8 @@ import { ISource } from "../../src/models/source";
 import { ProviderCore } from "../../src/provider";
 import * as utils from "../utils";
 
-describe("ProviderCore Tests", () => {
+describe("ProviderCore Tests", function() {
+  this.retries(2);
   const cloudkicker: CloudKicker = new CloudKicker();
   const provider = new ProviderCore(cloudkicker);
   let sandbox: sinon.SinonSandbox;

@@ -4,7 +4,7 @@ import { URL } from "url";
 
 import { IChapter } from "../models/chapter";
 import { IDetails } from "../models/details";
-import { ISearchResults } from "../models/search";
+import { ISearchOptions, ISearchResults } from "../models/search";
 import { ISource } from "../models/source";
 
 import { ICacheScoredResult, ScoredCache } from "../cache/ScoredCache";
@@ -14,7 +14,7 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
   public readonly is: string = "EasyGoingScans";
   public readonly baseURL: URL = new URL("http://read.egscans.com");
 
-  public search(title: string, options?: any): Promise<ISearchResults> {
+  public async search(title: string, options?: ISearchOptions): Promise<ISearchResults> {
     return this.querySearchCache(title)
       .then((result) => {
         return {
@@ -27,17 +27,17 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
       });
   }
 
-  public details(source: ISource): Promise<IDetails> {
+  public async details(source: ISource): Promise<IDetails> {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
     } else { return Promise.reject(new Error("This function is not supported by this provider.")); }
   }
 
-  public chapters(source: ISource): Promise<IChapter[]> {
+  public async chapters(source: ISource): Promise<IChapter[]> {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
     } else {
-      return this.cloudkicker.get(source.source)
+      return this.cloudkicker.get(source.source, { Referer: source.source.href })
         .then(({response}) => {
           const $ = cheerio.load(response.body);
           const selector = [
@@ -64,12 +64,12 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
     }
   }
 
-  public pages(source: ISource): Promise<ISource[]> {
+  public async pages(source: ISource): Promise<ISource[]> {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(new Error("The passed source was not for this provider."));
     } else {
       source.source.searchParams.set("display", "webtoon");
-      return this.cloudkicker.get(source.source)
+      return this.cloudkicker.get(source.source, { Referer: source.source.href })
         .then(({response}) => {
           const $ = cheerio.load(response.body);
           const selector = [
@@ -93,11 +93,11 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
     }
   }
 
-  protected getSearchCache(): Promise<ScoredCache<ISource>> {
+  protected async getSearchCache(): Promise<ScoredCache<ISource>> {
     if (!this.searchCache.isEmpty) {
       return Promise.resolve(this.searchCache);
     } else {
-      return this.cloudkicker.get(this.baseURL)
+      return this.cloudkicker.get(this.baseURL, { Referer: this.baseURL.href })
         .then(({response}) => {
           this.searchCache.clear();
           const $ = cheerio.load(response.body);
@@ -122,7 +122,7 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
     }
   }
 
-  protected querySearchCache(title: string): Promise<ICacheScoredResult<ISource>> {
+  protected async querySearchCache(title: string): Promise<ICacheScoredResult<ISource>> {
     return this.getSearchCache()
       .then((cache) => new Promise((resolve, reject) => {
         const result = cache.bestMatch(title);
