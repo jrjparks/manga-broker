@@ -55,7 +55,7 @@
     "@types/cheerio": "^0.22.1",
     "@types/lodash": "^4.14.65",
     "cheerio": "^1.0.0-rc.1",
-    "cloudkicker": "^1.0.0",
+    "cloudkicker": "^1.0.12",
     "lodash": "^4.17.4"
   }
 }
