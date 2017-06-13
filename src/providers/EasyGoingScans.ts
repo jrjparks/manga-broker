@@ -124,7 +124,7 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
 
   protected async querySearchCache(title: string): Promise<ICacheScoredResult<ISource>> {
     return this.getSearchCache()
-      .then((cache) => new Promise((resolve, reject) => {
+      .then((cache) => new Promise<ICacheScoredResult<ISource>>((resolve, reject) => {
         const result = cache.bestMatch(title);
         if (result.score >= 0.9) {
           return resolve(result);
