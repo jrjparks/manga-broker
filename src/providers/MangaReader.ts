@@ -110,8 +110,8 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
             const value = linkElement.attr("href");
             const location = new URL(this.baseURL.href);
             location.pathname = value;
-            const chapterMatch: RegExpMatchArray | null = (_.first(nameParts) as string).match(/\d+$/);
-            const chapter = chapterMatch ? parseInt(chapterMatch[0], 10) : undefined;
+            const chapterMatch: RegExpMatchArray = (_.first(nameParts) as string).match(/\d+$/) as RegExpMatchArray;
+            const chapter = parseInt(chapterMatch[0], 10);
             chapters.push({
               chapter: (chapter),
               name: (name),
@@ -128,8 +128,8 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
       return Promise.reject(new Error("The passed source was not for this provider."));
     } else {
       const pages: ISource[] = [];
-      const imageUrlToISource = (location: URL | string): ISource => {
-        if (_.isString(location)) { location = new URL(location); }
+      const imageUrlToISource = (href: string): ISource => {
+        const location = new URL(href);
         return {
           name: path.basename(location.pathname),
           source: location,
@@ -153,27 +153,17 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
           const parsePageImages = (body: any): ISource[] => {
             if (!_.isString(body)) { body = body.toString(); }
             const pageImages: RegExpMatchArray | null = body.match(imageRegExp);
-            if (!pageImages) {
-              throw new Error(`Unable to parse images from ${source.source.href}`);
-            }
+            if (!pageImages) { throw new Error(`Unable to parse images from ${source.source.href}`); }
             return pageImages.reverse().map(imageUrlToISource);
           };
 
-          pages.push(...parsePageImages(response.body));
-
           return minimumPageLocations.reduce((chain, pageLocation) => {
-            return chain.then(() => {
-              return this.cloudkicker.get(pageLocation, { Referer: pageLocation.href }).then((cfResponse) => {
-                const pageResponse = cfResponse.response;
-                pages.push(...parsePageImages(pageResponse.body));
-              });
-            });
-          }, Promise.resolve())
-            .catch((error) => { throw error; });
-        })
-        .then(() => {
-          return pages;
-        });
+            return chain.then(() => this.cloudkicker
+              .get(pageLocation, { Referer: pageLocation.href })
+              .then((cf) => pages.push(...parsePageImages(cf.response.body))));
+          }, Promise.resolve(pages.push(...parsePageImages(response.body))))
+          .catch((error: Error) => { throw error; });
+        }).then(() => pages);
     }
   }
 
