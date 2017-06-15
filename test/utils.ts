@@ -8,7 +8,7 @@ import { IAuthentableProvider, IProvider, ISourceProvider } from "../src/provide
 export const CI = process.env.CI;
 
 export function getFixture(path: string) {
-  return fs.readFileSync(`${__dirname}/fixtures/${path}`);
+  return fs.readFileSync(`${__dirname}/_fixtures_/${path}`);
 }
 
 export function handleUnhandledArgs(stub: sinon.SinonStub) {

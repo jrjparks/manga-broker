@@ -141,9 +141,19 @@ describe("Batoto Tests", () => {
         href: "https://bato.to/search?name=Knights+%26+Magic&name_cond=c",
         name: "Knights & Magic",
         sourceHref: "http://bato.to/comic/_/knights-magic-r19716",
+      }, {
+        fixture: "Batoto/search_one_piece.html",
+        href: "https://bato.to/search?name=One+Piece&name_cond=c",
+        name: "One Piece",
+        sourceHref: "http://bato.to/comic/_/one-piece-r39",
+      }, {
+        fixture: "Batoto/search_tensei_shitara_slime_datta_ken.html",
+        href: "https://bato.to/search?name=Tensei+Shitara+Slime+Datta+Ken&name_cond=c",
+        name: "Tensei Shitara Slime Datta Ken",
+        sourceHref: "http://bato.to/comic/_/tensei-shitara-slime-datta-ken-r15553",
       },
     ].forEach(({name, sourceHref, href, fixture}) => {
-      it(`should get details for '${name}'`, () => {
+      it(`should get search result for '${name}'`, () => {
         const source: ISource = {
           name: (name),
           source: new URL(href),
@@ -166,6 +176,33 @@ describe("Batoto Tests", () => {
           }));
       });
     });
+    if (local) {
+      it("should get search result for 'Knights & Magic' from cache", () => {
+        const name = "Knights & Magic";
+        const href = "https://bato.to/search?name=Knights+%26+Magic&name_cond=c";
+        const sourceHref = "http://bato.to/comic/_/knights-magic-r19716";
+        const source: ISource = {
+          name: (name),
+          source: new URL(href),
+        };
+        if (local) {
+          const get = sandbox.stub(cloudkicker, "get");
+          const post = sandbox.stub(cloudkicker, "post");
+          handleAuth(get, post);
+          get.withArgs(sinon.match({ href: (source.source.href) }))
+            .rejects(new Error("This should have hit the local cache."));
+        }
+        return batoto.authenticate(username, password).then(() =>
+          batoto.search(name).then(({results}) => {
+            expect(results).to.be.ok;
+            const result = results[0];
+            expect(result.name).to.be.ok;
+            expect(result.name).to.be.equal(name);
+            expect(result.source).to.be.ok;
+            expect(result.source.href).to.be.equal(sourceHref);
+          }));
+      });
+    }
 
     // Details
     [
@@ -194,6 +231,15 @@ describe("Batoto Tests", () => {
         return batoto.authenticate(username, password).then(() =>
           batoto.details(source).then((details) => {
             expect(details).to.be.ok;
+            // Name
+            expect(details.name).to.be.ok;
+            expect(details.name).to.be.equal(name);
+            // Genres
+            if (!details.about) { throw new Error("about is not defined"); }
+            expect(details.about).to.be.ok;
+            if (!details.about.genres) { throw new Error("about.genres is not defined"); }
+            expect(details.about.genres).to.be.ok;
+            expect(details.about.genres).to.have.length.above(0);
           }));
       });
     });

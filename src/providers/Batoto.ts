@@ -4,9 +4,13 @@ import path = require("path");
 import { URL } from "url";
 
 import { IChapter } from "../models/chapter";
+import { CoverSide, ICover } from "../models/cover";
 import { IDetails } from "../models/details";
+import { Genre } from "../models/genre";
 import { ISearchOptions, ISearchResults } from "../models/search";
 import { ISource } from "../models/source";
+import { Status } from "../models/status";
+import { Type } from "../models/type";
 
 import { ICacheScoredResult } from "../cache/ScoredCache";
 import { IAuthentableProvider, ISourceProvider, ProviderCore } from "../provider";
@@ -124,8 +128,80 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
           const $ = cheerio.load(response.body);
           const nameNode = $("#content > div:nth-child(4) > div > div.ipsBox_withphoto > h1");
           const name = nameNode.text().trim();
+
+          const selector: string = [
+            "#content", "div:nth-child(4)", "div", "div.ipsBox",
+            "div:nth-child(1)", "div:nth-child(2)", "table", "tbody",
+          ].join(" > ");
+          const detailsNode = $(selector);
+
+          const associatedNames: ISource[] = detailsNode.find("tr:nth-child(1) > td:nth-child(2) > span")
+            .toArray().map((node) => {
+              const element = $(node);
+              const associatedName = element.text().trim();
+              return {
+                name: (associatedName),
+                source: (source.source),
+              } as ISource;
+            });
+
+          const authors: string[] = detailsNode.find("tr:nth-child(2) > td > a")
+            .toArray().map((node) => {
+              const element = $(node);
+              return element.text().trim();
+            });
+
+          const artists: string[] = detailsNode.find("tr:nth-child(3) > td > a")
+            .toArray().map((node) => {
+              const element = $(node);
+              return element.text().trim();
+            });
+
+          const coverSelector = [
+            "#content", "div:nth-child(4)", "div", "div.ipsBox",
+            "div:nth-child(1)", "div:nth-child(1)", "img",
+          ].join(" > ");
+          const coverNode = $(coverSelector);
+          const coverLocation = new URL(coverNode.attr("src"));
+          const covers: ICover[] = coverNode ? [{
+            MIME: "image/jpeg",
+            Thumbnail: (coverLocation),
+            side: CoverSide.Front,
+            volume: 1,
+          }] : [];
+
+          const statusText: string = detailsNode
+            .find("tr:nth-child(6) > td:nth-child(2)").text().trim();
+          const status: Status = _.get(Status, statusText, Status.Unknown);
+
+          const typeText: string = detailsNode
+            .find("tr:nth-child(5) > td:nth-child(2)")
+            .text().trim().split(" ")[0];
+          const type: Type = _.get(Type, typeText, Type.Unknown);
+
+          const description = detailsNode
+            .find("tr:nth-child(7) > td:nth-child(2)").text().trim();
+
+          const genres: Genre[] = detailsNode.find("tr:nth-child(4) > td:nth-child(2) > a").toArray()
+            .map((genreNode: CheerioElement) => $(genreNode).text().trim().replace(/[^\w]/, ""))
+            .map((genre: string) => _.get(Genre, genre, Genre.Unknown))
+            .filter((genre: Genre) => genre !== Genre.Unknown);
           // TODO: Complete details
+
           return {
+            about: {
+              artists: (artists),
+              associatedNames: (associatedNames),
+              authors: (authors),
+              covers: (covers),
+              description: (description),
+              genres: (genres),
+            },
+            meta: {
+              isNovel: false,
+              status: (status),
+              type: (type),
+            },
             name: (name),
             source: (source.source),
           };
