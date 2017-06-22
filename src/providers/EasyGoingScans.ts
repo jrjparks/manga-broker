@@ -2,10 +2,13 @@ import cheerio = require("cheerio");
 import path = require("path");
 import { URL } from "url";
 
-import { IChapter } from "../models/chapter";
-import { IDetails } from "../models/details";
-import { ISearchOptions, ISearchResults } from "../models/search";
-import { ISource } from "../models/source";
+import {
+  IChapter,
+  IDetails,
+  ISearchOptions,
+  ISearchResults,
+  ISource,
+} from "../models";
 
 import { ICacheScoredResult, ScoredCache } from "../cache/ScoredCache";
 import { ISourceProvider, ProviderCore } from "../provider";

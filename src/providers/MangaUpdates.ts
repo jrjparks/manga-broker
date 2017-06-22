@@ -2,17 +2,61 @@ import _ = require("lodash");
 import cheerio = require("cheerio");
 import { URL } from "url";
 
-import { CoverSide, ICover } from "../models/cover";
-import { IDetails } from "../models/details";
-import { Genre } from "../models/genre";
-import { IPublisher } from "../models/publisher";
-import { ISearchOptions, ISearchResults } from "../models/search";
-import { ISource } from "../models/source";
-import { Status } from "../models/status";
-import { Type } from "../models/type";
+import {
+  CoverSide,
+  Genre,
+  ICover,
+  IDetails,
+  IPublisher,
+  ISearchOptions,
+  ISearchResults,
+  ISource,
+  Status,
+  Type,
+} from "../models";
 
-import { ICacheScoredResult } from "../cache/ScoredCache";
+import { ICacheScoredResult } from "../cache";
 import { IProvider, ProviderCore } from "../provider";
+import { ValueMapper } from "../ValueMapper";
+
+const GenreMap: ValueMapper<Genre> = new ValueMapper<Genre>({
+  "Action": Genre.Action,
+  "Adult": Genre.Adult,
+  "Adventure": Genre.Adventure,
+  "Comedy": Genre.Comedy,
+  "Doujinshi": Genre.Doujinshi,
+  "Drama": Genre.Drama,
+  "Ecchi": Genre.Ecchi,
+  "Fantasy": Genre.Fantasy,
+  "Gender Bender": Genre.GenderBender,
+  "Harem": Genre.Harem,
+  "Hentai": Genre.Hentai,
+  "Historical": Genre.Historical,
+  "Horror": Genre.Horror,
+  "Josei": Genre.Josei,
+  "Lolicon": Genre.Lolicon,
+  "Martial Arts": Genre.MartialArts,
+  "Mature": Genre.Mature,
+  "Mecha": Genre.Mecha,
+  "Mystery": Genre.Mystery,
+  "Psychological": Genre.Psychological,
+  "Romance": Genre.Romance,
+  "School Life": Genre.SchoolLife,
+  "Sci-fi": Genre.Scifi,
+  "Seinen": Genre.Seinen,
+  "Shotacon": Genre.Shotacon,
+  "Shoujo": Genre.Shoujo,
+  "Shoujo Ai": Genre.ShoujoAi,
+  "Shounen": Genre.Shounen,
+  "Shounen Ai": Genre.ShounenAi,
+  "Slice of Life": Genre.SliceOfLife,
+  "Smut": Genre.Smut,
+  "Sports": Genre.Sports,
+  "Supernatural": Genre.Supernatural,
+  "Tragedy": Genre.Tragedy,
+  "Yaoi": Genre.Yaoi,
+  "Yuri": Genre.Yuri,
+});
 
 export class MangaUpdates extends ProviderCore implements IProvider {
   public readonly is: string = "MangaUpdates";
@@ -68,7 +112,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
               const isNovel = name.endsWith("(Novel)");
               const genres: Genre[] = element.find("td:nth-child(2)").text()
                 .split(",").map((genre: string) => genre.trim())
-                .map((genre: string) => _.get(Genre, genre, Genre.Unknown))
+                .map((genre: string) => GenreMap.toValue(genre, Genre.Unknown))
                 .filter((genre: Genre) => genre !== Genre.Unknown);
               const location = new URL(titleNode.attr("href"));
               const id = parseInt(location.searchParams.get("id") || "-1", 10);
@@ -193,7 +237,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
           // Genres
           const genres: Genre[] = contentNode.find("div:nth-child(4) > div > div:nth-child(5) > a:has(>u)").toArray()
             .map((node) => $(node).text().trim())
-            .map((genre: string) => _.get(Genre, genre, Genre.Unknown))
+            .map((genre: string) => GenreMap.toValue(genre, Genre.Unknown))
             .filter((genre: Genre) => genre !== Genre.Unknown);
 
           const categories = contentNode.find("#ajax_tag_data > ul > li > a")

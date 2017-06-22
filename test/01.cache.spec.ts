@@ -1,7 +1,6 @@
 /// <reference types="mocha"/>
 import { expect } from "chai";
-import { Cache } from "../src/cache/Cache";
-import { ScoredCache } from "../src/cache/ScoredCache";
+import { Cache, ScoredCache } from "../src/cache";
 
 describe("Cache Tests", () => {
   it("should test Cache<string>", (done) => {

@@ -5,17 +5,72 @@ import path = require("path");
 import { URL } from "url";
 import vm = require("vm");
 
-import { IChapter } from "../models/chapter";
-import { CoverSide, ICover } from "../models/cover";
-import { IDetails } from "../models/details";
-import { Genre } from "../models/genre";
-import { ISearchResults } from "../models/search";
-import { ISource } from "../models/source";
-import { Status } from "../models/status";
+import {
+  CoverSide,
+  Genre,
+  IChapter,
+  ICover,
+  IDetails,
+  ISearchResults,
+  ISource,
+  Status,
+  Type,
+} from "../models";
 
-import { ICacheScoredResult } from "../cache/ScoredCache";
+import { ICacheScoredResult } from "../cache";
 import { ISourceProvider, ProviderCore } from "../provider";
 import { stringEnum } from "../StringEnum";
+import { ValueMapper } from "../ValueMapper";
+
+const TypeMap: ValueMapper<Type> = new ValueMapper<Type>({
+  Manga: Type.Manga,
+  Manhua: Type.Manhua,
+  Manhwa: Type.Manhwa,
+});
+const GenreMap: ValueMapper<Genre> = new ValueMapper<Genre>({
+  "4-Koma": Genre.FourKoma,
+  "Action": Genre.Action,
+  "Adult": Genre.Adult,
+  "Adventure": Genre.Adventure,
+  "Comedy": Genre.Comedy,
+  "Comic": Genre.Comic,
+  "Cooking": Genre.Cooking,
+  "Doujinshi": Genre.Doujinshi,
+  "Drama": Genre.Drama,
+  "Ecchi": Genre.Ecchi,
+  "Fantasy": Genre.Fantasy,
+  "Gender Bender": Genre.GenderBender,
+  "Harem": Genre.Harem,
+  "Historical": Genre.Historical,
+  "Horror": Genre.Horror,
+  "Josei": Genre.Josei,
+  "Lolicon": Genre.Lolicon,
+  "Martial Arts": Genre.MartialArts,
+  "Mature": Genre.Mature,
+  "Mecha": Genre.Mecha,
+  "Medical": Genre.Medical,
+  "Music": Genre.Music,
+  "Mystery": Genre.Mystery,
+  "One shot": Genre.Oneshot,
+  "Psychological": Genre.Psychological,
+  "Romance": Genre.Romance,
+  "School Life": Genre.SchoolLife,
+  "Sci-fi": Genre.Scifi,
+  "Seinen": Genre.Seinen,
+  "Shotacon": Genre.Shotacon,
+  "Shoujo": Genre.Shoujo,
+  "Shoujo Ai": Genre.ShoujoAi,
+  "Shounen": Genre.Shounen,
+  "Shounen Ai": Genre.ShounenAi,
+  "Slice of Life": Genre.SliceOfLife,
+  "Smut": Genre.Smut,
+  "Sports": Genre.Sports,
+  "Supernatural": Genre.Supernatural,
+  "Tragedy": Genre.Tragedy,
+  "Webtoon": Genre.Webtoon,
+  "Yaoi": Genre.Yaoi,
+  "Yuri": Genre.Yuri,
+});
 
 export class KissManga extends ProviderCore implements ISourceProvider {
   public readonly is: string = "KissManga";
@@ -67,9 +122,12 @@ export class KissManga extends ProviderCore implements ISourceProvider {
                 source: (location),
               };
             });
-          const genres: Genre[] = detailsNode.find("p:nth-child(3) > a").toArray()
-            .map((genreNode: CheerioElement) => $(genreNode).text().trim().replace(/[^\w]/, ""))
-            .map((genre: string) => _.get(Genre, genre, Genre.Unknown))
+          const genreNames: string[] = detailsNode.find("p:nth-child(3) > a").toArray()
+            .map((genreNode: CheerioElement) => $(genreNode).text().trim());
+          const type: Type | undefined = [
+            ...new Set(genreNames.map((genre: string) => TypeMap.toValue(genre))),
+          ][0];
+          const genres: Genre[] = genreNames.map((genre: string) => GenreMap.toValue(genre, Genre.Unknown))
             .filter((genre: Genre) => genre !== Genre.Unknown);
           const authorArtist: string[] = detailsNode.find("p:nth-child(4) > a").toArray()
             .map((node) => $(node).text().trim());
@@ -101,6 +159,7 @@ export class KissManga extends ProviderCore implements ISourceProvider {
             meta: {
               isNovel: false,
               status: (status),
+              type: (type),
             },
             name: (name),
             source: (source.source),

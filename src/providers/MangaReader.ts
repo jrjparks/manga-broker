@@ -3,17 +3,61 @@ import cheerio = require("cheerio");
 import path = require("path");
 import { URL } from "url";
 
-import { IChapter } from "../models/chapter";
-import { CoverSide, ICover } from "../models/cover";
-import { IDetails } from "../models/details";
-import { Genre } from "../models/genre";
-import { ISearchResults } from "../models/search";
-import { ISource } from "../models/source";
-import { Status } from "../models/status";
+import {
+  CoverSide,
+  Genre,
+  IChapter,
+  ICover,
+  IDetails,
+  ISearchResults,
+  ISource,
+  Status,
+} from "../models";
 
-import { ICacheScoredResult, ScoredCache } from "../cache/ScoredCache";
+import { ICacheScoredResult, ScoredCache } from "../cache";
 import { ISourceProvider, ProviderCore } from "../provider";
 import { StringUtil } from "../util/string";
+import { ValueMapper } from "../ValueMapper";
+
+const GenreMap: ValueMapper<Genre> = new ValueMapper<Genre>({
+  "Action": Genre.Action,
+  "Adventure": Genre.Adventure,
+  "Comedy": Genre.Comedy,
+  "Demons": Genre.Demons,
+  "Drama": Genre.Drama,
+  "Ecchi": Genre.Ecchi,
+  "Fantasy": Genre.Fantasy,
+  "Gender Bender": Genre.GenderBender,
+  "Harem": Genre.Harem,
+  "Historical": Genre.Historical,
+  "Horror": Genre.Horror,
+  "Josei": Genre.Josei,
+  "Magic": Genre.Magic,
+  "Martial Arts": Genre.MartialArts,
+  "Mature": Genre.Mature,
+  "Mecha": Genre.Mecha,
+  "Military": Genre.Military,
+  "Mystery": Genre.Mystery,
+  "One Shot": Genre.Oneshot,
+  "Psychological": Genre.Psychological,
+  "Romance": Genre.Romance,
+  "School Life": Genre.SchoolLife,
+  "Sci-Fi": Genre.Scifi,
+  "Seinen": Genre.Seinen,
+  "Shoujo": Genre.Shoujo,
+  "Shoujoai": Genre.ShoujoAi,
+  "Shounen": Genre.Shounen,
+  "Shounenai": Genre.ShounenAi,
+  "Slice of Life": Genre.SliceOfLife,
+  "Smut": Genre.Smut,
+  "Sports": Genre.Sports,
+  "Super Power": Genre.SuperPower,
+  "Supernatural": Genre.Supernatural,
+  "Tragedy": Genre.Tragedy,
+  "Vampire": Genre.Vampire,
+  "Yaoi": Genre.Yaoi,
+  "Yuri": Genre.Yuri,
+});
 
 export class MangaReader extends ProviderCore implements ISourceProvider {
   public readonly is: string = "MangaReader";
@@ -57,7 +101,7 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
 
           const genres: Genre[] = propertiesNode.find("tr:nth-child(8) > td:nth-child(2) > a")
             .toArray().map((genreNode) => $(genreNode).text().trim())
-            .map((genre: string) => _.get(Genre, genre, Genre.Unknown))
+            .map((genre: string) => GenreMap.toValue(genre, Genre.Unknown))
             .filter((genre: Genre) => genre !== Genre.Unknown);
 
           const description = $("#readmangasum > p").text().trim();
@@ -161,8 +205,7 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
             return chain.then(() => this.cloudkicker
               .get(pageLocation, { Referer: pageLocation.href })
               .then((cf) => pages.push(...parsePageImages(cf.response.body))));
-          }, Promise.resolve(pages.push(...parsePageImages(response.body))))
-          .catch((error: Error) => { throw error; });
+          }, Promise.resolve(pages.push(...parsePageImages(response.body))));
         }).then(() => pages);
     }
   }

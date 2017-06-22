@@ -3,17 +3,63 @@ import cheerio = require("cheerio");
 import path = require("path");
 import { URL } from "url";
 
-import { IChapter } from "../models/chapter";
-import { CoverSide, ICover } from "../models/cover";
-import { IDetails } from "../models/details";
-import { Genre } from "../models/genre";
-import { ISearchOptions, ISearchResults } from "../models/search";
-import { ISource } from "../models/source";
-import { Status } from "../models/status";
-import { Type } from "../models/type";
+import {
+  CoverSide,
+  Genre,
+  IChapter,
+  ICover,
+  IDetails,
+  ISearchOptions,
+  ISearchResults,
+  ISource,
+  Status,
+  Type,
+} from "../models";
 
-import { ICacheScoredResult } from "../cache/ScoredCache";
+import { ICacheScoredResult } from "../cache";
 import { IAuthentableProvider, ISourceProvider, ProviderCore } from "../provider";
+import { ValueMapper } from "../ValueMapper";
+
+const GenreMap: ValueMapper<Genre> = new ValueMapper<Genre>({
+  "4-Koma": Genre.FourKoma,
+  "Action": Genre.Action,
+  "Adventure": Genre.Adventure,
+  "Award Winning": Genre.AwardWinning,
+  "Comedy": Genre.Comedy,
+  "Cooking": Genre.Cooking,
+  "Doujinshi": Genre.Doujinshi,
+  "Drama": Genre.Drama,
+  "Ecchi": Genre.Ecchi,
+  "Fantasy": Genre.Fantasy,
+  "Gender Bender": Genre.GenderBender,
+  "Harem": Genre.Harem,
+  "Historical": Genre.Historical,
+  "Horror": Genre.Horror,
+  "Josei": Genre.Josei,
+  "Martial Arts": Genre.MartialArts,
+  "Mecha": Genre.Mecha,
+  "Medical": Genre.Medical,
+  "Music": Genre.Music,
+  "Mystery": Genre.Mystery,
+  "Oneshot": Genre.Oneshot,
+  "Psychological": Genre.Psychological,
+  "Romance": Genre.Romance,
+  "School Life": Genre.SchoolLife,
+  "Sci-fi": Genre.Scifi,
+  "Seinen": Genre.Seinen,
+  "Shoujo": Genre.Shoujo,
+  "Shoujo Ai": Genre.ShoujoAi,
+  "Shounen": Genre.Shounen,
+  "Shounen Ai": Genre.ShounenAi,
+  "Slice of Life": Genre.SliceOfLife,
+  "Smut": Genre.Smut,
+  "Sports": Genre.Sports,
+  "Supernatural": Genre.Supernatural,
+  "Tragedy": Genre.Tragedy,
+  "Webtoon": Genre.Webtoon,
+  "Yaoi": Genre.Yaoi,
+  "Yuri": Genre.Yuri,
+});
 
 const AUTH_KEY = "880ea6a14ea49e853634fbdc5015a024";
 export class Batoto extends ProviderCore implements ISourceProvider, IAuthentableProvider {
@@ -183,8 +229,8 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
             .find("tr:nth-child(7) > td:nth-child(2)").text().trim();
 
           const genres: Genre[] = detailsNode.find("tr:nth-child(4) > td:nth-child(2) > a").toArray()
-            .map((genreNode: CheerioElement) => $(genreNode).text().trim().replace(/[^\w]/, ""))
-            .map((genre: string) => _.get(Genre, genre, Genre.Unknown))
+            .map((genreNode: CheerioElement) => $(genreNode).text().trim())
+            .map((genre: string) => GenreMap.toValue(genre, Genre.Unknown))
             .filter((genre: Genre) => genre !== Genre.Unknown);
           // TODO: Complete details
 
@@ -262,7 +308,7 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
       const pages: ISource[] = [];
       const hashId = source.source.hash.replace(/.*#/, "");
       const getReaderURL =
-        (id: string, page: number = 1): URL => new URL(`/areader?id=${id}&p=${page}&supress_webtoon=t`, this.baseURL);
+        (id: string, page: number): URL => new URL(`/areader?id=${id}&p=${page}&supress_webtoon=t`, this.baseURL);
       const URL2ISource = (url: URL): ISource => {
         return {
           name: path.basename(url.pathname),
@@ -306,8 +352,7 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
               pages.push(...getImgURLs(cfResponse.response.body).map(URL2ISource));
             });
           });
-        }, Promise.resolve())
-          .catch((error) => { throw error; });
+        }, Promise.resolve());
       }).then(() => pages);
     }
   }

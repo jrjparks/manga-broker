@@ -1,18 +1,6 @@
-import {Batoto} from "./providers/Batoto";
-import {EasyGoingScans} from "./providers/EasyGoingScans";
-import {KissManga} from "./providers/KissManga";
-import {MangaPanda} from "./providers/MangaPanda";
-import {MangaReader} from "./providers/MangaReader";
-import {MangaUpdates} from "./providers/MangaUpdates";
+// export * from "./models";
+import * as models from "./models";
+export const Models = models;
 
-export const SourceProviders = {
-  Batoto,
-  EasyGoingScans,
-  KissManga,
-  MangaPanda,
-  MangaReader,
-};
-
-export const DatabaseProviders = {
-  MangaUpdates,
-};
+import * as providers from "./providers";
+export const Providers = providers;

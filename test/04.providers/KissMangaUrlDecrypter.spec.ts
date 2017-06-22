@@ -70,6 +70,10 @@ describe("KissMangaUrlDecrypter Tests", function() {
         encryptedUrl: "l+pKsY1S/p8HdYHYY1x9JfBYPyJ9U4hQBsTiweCchs8wINRGW5KTlcve3tZhNNNdJhTBMLXTTAJM80S2iig7D4QV8c5ZPfj9Xjgyh0gP7hDnXmovdm1atKJSzcY9z3aobWw1ge4+x74dTTE2We712jkyWNiUfljik9IaGcRbFgga2RAmxRWlwh1rsDDI887M",
         expectedDecryptedUrl: "http://2.bp.blogspot.com/nfas_rLGMAEv8HNhK1M0Y792vW8lldAp7swT70lm9i_NvbFOI46scoXbAjuNd10iBfMknxGJfi7o0w=s0?title=038_1474181393.jpg",
       },
+      {
+        encryptedUrl: "l+pKsY1S/p8HdYHYY1x9JTuBZOf2iOTk/rUckbn3SSyqIUKnOfeVxntcH0JSO3Dxh35IGTwe3UnvjHPyy/97M53V+FonjWr7JZfHEwY+DaSxVqaib+JaNF5wWvOq7cJ702EdsvqgcBPsTYPllUhAY3Ifl5mqLZC98wvr/8wntvq65B2X+W1abyhk5WFR59dr",
+        expectedDecryptedUrl: "http://2.bp.blogspot.com/RCDpsaLpZ6hdf-QnDRoieXgg7ubcCPQCuU5seCe0B3hkcM9fLo_HH14kBPdmroZ9demMVprQyeU_Kw=s0?title=036_1474181393.jpg",
+      },
     ].forEach(({encryptedUrl, expectedDecryptedUrl}, index) => {
       it(`should decode encrypted url #${index + 1}`, () => {
         return kissmangaurldecrypter.getWrapKA(testPageContent)
