@@ -85,11 +85,10 @@ describe("MangaPanda Tests", function() {
         name: (name),
         source: new URL(href),
       };
-
       it(`should return search result for '${name}'`, () => {
         if (local) {
-          sandbox.stub(cloudkicker, "get")
-            .resolves({ response: { body: utils.getFixture("MangaReader/alphabetical.html") } });
+          const get = sandbox.stub(cloudkicker, "get");
+          get.resolves({ response: { body: utils.getFixture("MangaReader/alphabetical.html") } });
         }
         return mangapanda.search(name)
           .then(({results}) => {

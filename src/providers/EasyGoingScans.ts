@@ -8,14 +8,16 @@ import {
   ISearchOptions,
   ISearchResults,
   ISource,
+  ProviderType,
 } from "../models";
 
-import { ICacheScoredResult, ScoredCache } from "../cache/ScoredCache";
+import { ICacheScoredResult, ScoredCache } from "../cache";
 import { ISourceProvider, ProviderCore } from "../provider";
 
 export class EasyGoingScans extends ProviderCore implements ISourceProvider {
   public readonly is: string = "EasyGoingScans";
   public readonly baseURL: URL = new URL("http://read.egscans.com");
+  public readonly provides: ProviderType = ProviderType.Comic;
 
   public async search(title: string, options?: ISearchOptions): Promise<ISearchResults> {
     return this.querySearchCache(title)

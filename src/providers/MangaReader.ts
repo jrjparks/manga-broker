@@ -11,6 +11,7 @@ import {
   IDetails,
   ISearchResults,
   ISource,
+  ProviderType,
   Status,
 } from "../models";
 
@@ -62,6 +63,7 @@ const GenreMap: ValueMapper<Genre> = new ValueMapper<Genre>({
 export class MangaReader extends ProviderCore implements ISourceProvider {
   public readonly is: string = "MangaReader";
   public readonly baseURL: URL = new URL("http://www.mangareader.net");
+  public readonly provides: ProviderType = ProviderType.Comic;
 
   public async search(title: string, options?: any): Promise<ISearchResults> {
     return this.querySearchCache(title)

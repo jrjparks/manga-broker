@@ -1,7 +1,7 @@
 /// <reference types="mocha"/>
 import { expect } from "chai";
 import * as broker from "../src";
-import { IAuthentableProvider, IProvider, ISourceProvider, ProviderCore } from "../src/provider";
+import * as provider from "../src/provider";
 
 describe("Index Load Sanity Tests", () => {
   it("should import manga-broker", () => {
@@ -14,33 +14,23 @@ describe("Index Load Sanity Tests", () => {
     });
 
     Object.keys(broker.Providers).forEach((name) => {
-      const testIsSourceProvider = (provider: IProvider): provider is ISourceProvider => {
-        return (provider as ISourceProvider) &&
-          (provider as ISourceProvider).chapters !== undefined &&
-          (provider as ISourceProvider).pages !== undefined;
-      };
-      const testIsAuthentableProvider = (provider: IProvider): provider is IAuthentableProvider => {
-        return (provider as IAuthentableProvider) &&
-          (provider as IAuthentableProvider).authenticate !== undefined &&
-          (provider as IAuthentableProvider).deauthenticate !== undefined;
-      };
       it(`should import manga-broker.Providers.${name}`, () => {
-        const provider: IProvider = new ((broker.Providers as any)[name])();
-        expect(provider).to.be.ok;
-        expect(provider.is).to.be.ok;
-        expect(provider.is).to.be.a("string");
-        expect(provider.details).to.be.a("function");
-        expect(provider.search).to.be.a("function");
-        if (provider instanceof ProviderCore) {
-          expect(provider.clearCache).to.be.a("function");
+        const prvdr: provider.IProvider = new ((broker.Providers as any)[name])();
+        expect(prvdr).to.be.ok;
+        expect(prvdr.is).to.be.ok;
+        expect(prvdr.is).to.be.a("string");
+        expect(prvdr.details).to.be.a("function");
+        expect(prvdr.search).to.be.a("function");
+        if (prvdr instanceof provider.ProviderCore) {
+          expect(prvdr.clearCache).to.be.a("function");
         }
-        if (testIsSourceProvider(provider)) {
-          expect(provider.chapters).to.be.a("function");
-          expect(provider.pages).to.be.a("function");
+        if (provider.isSourceProvider(prvdr)) {
+          expect(prvdr.chapters).to.be.a("function");
+          expect(prvdr.pages).to.be.a("function");
         }
-        if (testIsAuthentableProvider(provider)) {
-          expect(provider.authenticate).to.be.a("function");
-          expect(provider.deauthenticate).to.be.a("function");
+        if (provider.isAuthentableProvider(prvdr)) {
+          expect(prvdr.authenticate).to.be.a("function");
+          expect(prvdr.deauthenticate).to.be.a("function");
         }
       });
     });

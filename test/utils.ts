@@ -4,7 +4,14 @@ import * as sinon from "sinon";
 import fs = require("fs");
 import { URL } from "url";
 import { ISource } from "../src/models/source";
-import { IAuthentableProvider, IProvider, ISourceProvider } from "../src/provider";
+import {
+  IAuthentableProvider,
+  IProvider,
+  isAuthentableProvider,
+  isNovelProvider,
+  isProvider,
+  isSourceProvider,
+} from "../src/provider";
 export const CI = process.env.CI;
 
 export function getFixture(path: string) {
@@ -21,7 +28,7 @@ export function unexpectedPromise(result: any) {
   throw new Error(`Promise was unexpectedly fulfilled. Result: ${JSON.stringify(result)}`);
 }
 
-export function providerBadSourceHostTests(provider: IProvider | ISourceProvider) {
+export function providerBadSourceHostTests(provider: IProvider) {
   const source: ISource = {
     name: "example.com",
     source: new URL("http://example.com/"),
@@ -31,14 +38,13 @@ export function providerBadSourceHostTests(provider: IProvider | ISourceProvider
     expect(error.message).to.be.ok;
     expect(error.message).to.be.equal("The passed source was not for this provider.");
   };
-  const isSourceProvider = (iface: any): iface is ISourceProvider => {
-    return iface.chapters !== undefined;
-  };
-  it(`details should fail for wrong host.`, () => {
-    return provider.details(source)
-      .then(unexpectedPromise)
-      .catch(badSourceErrorCatch);
-  });
+  if (isProvider(provider)) {
+    it(`details should fail for wrong host.`, () => {
+      return provider.details(source)
+        .then(unexpectedPromise)
+        .catch(badSourceErrorCatch);
+    });
+  }
   if (isSourceProvider(provider)) {
     it(`chapters should fail for wrong host.`, () => {
       return provider.chapters(source)
@@ -51,9 +57,21 @@ export function providerBadSourceHostTests(provider: IProvider | ISourceProvider
         .catch(badSourceErrorCatch);
     });
   }
+  if (isNovelProvider(provider)) {
+    it(`chapters should fail for wrong host.`, () => {
+      return provider.chapters(source)
+        .then(unexpectedPromise)
+        .catch(badSourceErrorCatch);
+    });
+    it(`chapter should fail for wrong host.`, () => {
+      return provider.chapter(source)
+        .then(unexpectedPromise)
+        .catch(badSourceErrorCatch);
+    });
+  }
 }
 
-export function providerNotAuthTests(provider: (IProvider | ISourceProvider) & IAuthentableProvider, href: string) {
+export function providerNotAuthTests(provider: IProvider & IAuthentableProvider, href: string) {
   const source: ISource = {
     name: href || "example.com",
     source: new URL(href || "http://example.com/"),
@@ -63,20 +81,15 @@ export function providerNotAuthTests(provider: (IProvider | ISourceProvider) & I
     expect(error.message).to.be.ok;
     expect(error.message).to.be.equal("Provider requires authentication.");
   };
-  const isSourceProvider = (iface: any): iface is ISourceProvider => {
-    return iface.chapters !== undefined;
-  };
-  it(`details should fail for no auth.`, () => {
-    return provider.details(source)
-      .then(unexpectedPromise)
-      .catch(notAuthErrorCatch);
-  });
-  it(`search should fail for no auth.`, () => {
-    return provider.search("test")
-      .then(unexpectedPromise)
-      .catch(notAuthErrorCatch);
-  });
-  if (isSourceProvider(provider)) {
+
+  if (isProvider(provider) && isAuthentableProvider(provider)) {
+    it(`details should fail for no auth.`, () => {
+      return provider.details(source)
+        .then(unexpectedPromise)
+        .catch(notAuthErrorCatch);
+    });
+  }
+  if (isSourceProvider(provider) && isAuthentableProvider(provider)) {
     it(`chapters should fail for no auth.`, () => {
       return provider.chapters(source)
         .then(unexpectedPromise)
@@ -84,6 +97,13 @@ export function providerNotAuthTests(provider: (IProvider | ISourceProvider) & I
     });
     it(`pages should fail for no auth.`, () => {
       return provider.pages(source)
+        .then(unexpectedPromise)
+        .catch(notAuthErrorCatch);
+    });
+  }
+  if (isNovelProvider(provider) && isAuthentableProvider(provider)) {
+    it(`pages should fail for no auth.`, () => {
+      return provider.chapter(source)
         .then(unexpectedPromise)
         .catch(notAuthErrorCatch);
     });

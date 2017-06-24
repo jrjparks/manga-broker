@@ -12,6 +12,7 @@ import {
   ISearchOptions,
   ISearchResults,
   ISource,
+  ProviderType,
   Status,
   Type,
 } from "../models";
@@ -65,6 +66,7 @@ const AUTH_KEY = "880ea6a14ea49e853634fbdc5015a024";
 export class Batoto extends ProviderCore implements ISourceProvider, IAuthentableProvider {
   public readonly is: string = "Batoto";
   public readonly baseURL: URL = new URL("https://bato.to/");
+  public readonly provides: ProviderType = ProviderType.Comic;
   protected secureKey: string;
 
   protected authenticated: boolean = false;

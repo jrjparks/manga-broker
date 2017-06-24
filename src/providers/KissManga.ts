@@ -13,6 +13,7 @@ import {
   IDetails,
   ISearchResults,
   ISource,
+  ProviderType,
   Status,
   Type,
 } from "../models";
@@ -75,6 +76,7 @@ const GenreMap: ValueMapper<Genre> = new ValueMapper<Genre>({
 export class KissManga extends ProviderCore implements ISourceProvider {
   public readonly is: string = "KissManga";
   public readonly baseURL: URL = new URL("http://kissmanga.com");
+  public readonly provides: ProviderType = ProviderType.Comic;
   protected readonly urlDecrypter: KissMangaUrlDecrypter;
 
   constructor(cloudkicker?: CloudKicker) {
@@ -236,7 +238,6 @@ export class KissManga extends ProviderCore implements ISourceProvider {
     }
     const query: boolean = this.searchCache.isEmpty || result.score < 0.9;
     if (query) {
-      // const queryUrl = new URL("/Search/Manga", this.baseURL);
       const queryUrl = new URL("/AdvanceSearch", this.baseURL);
       const dataMap: { [key: string]: any } = {
         authorArtist: "",
