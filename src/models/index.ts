@@ -4,6 +4,7 @@ export * from "./cover";
 export * from "./details";
 export * from "./genre";
 export * from "./meta";
+export * from "./providerType";
 export * from "./publisher";
 export * from "./search";
 export * from "./source";
