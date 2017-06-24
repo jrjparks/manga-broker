@@ -3,4 +3,6 @@ export enum Type {
   Manga = 1,
   Manhwa,
   Manhua,
+  Novel,
+  WebNovel,
 }
