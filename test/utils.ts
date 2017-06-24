@@ -83,6 +83,11 @@ export function providerNotAuthTests(provider: IProvider & IAuthentableProvider,
   };
 
   if (isProvider(provider) && isAuthentableProvider(provider)) {
+    it(`search should fail for no auth.`, () => {
+      return provider.search("test")
+        .then(unexpectedPromise)
+        .catch(notAuthErrorCatch);
+    });
     it(`details should fail for no auth.`, () => {
       return provider.details(source)
         .then(unexpectedPromise)
