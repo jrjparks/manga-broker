@@ -5,5 +5,8 @@ export { KissManga } from "./KissManga";
 export { MangaPanda } from "./MangaPanda";
 export { MangaReader } from "./MangaReader";
 
+// Novel Providers
+export { NovelUpdates } from "./NovelUpdates";
+
 // Database Providers
 export { MangaUpdates } from "./MangaUpdates";
