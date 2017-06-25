@@ -2,6 +2,8 @@ import _ = require("lodash");
 import cheerio = require("cheerio");
 import { URL } from "url";
 
+import { parseLinkFn } from "../util/cheerio";
+
 import {
   CoverSide,
   Genre,
@@ -156,27 +158,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
       return this.cloudkicker.get(source.source, { Referer: source.source.href })
         .then(({response}) => {
           const $ = cheerio.load(response.body);
-          // const parseLink = (node: any, param: string): ISource | undefined => {
-          const parseLink = (node: CheerioElement): ISource | undefined => {
-            const element = $(node);
-            if (element.length !== 1) {
-              return undefined;
-            } else {
-              const name = element.text().trim();
-              const href = element.attr("href");
-              if (href.includes("javascript:")) {
-                return undefined;
-              } else {
-                const location: URL = new URL(href.includes("://") ? href : `${this.baseURL}/${href}`);
-                // const value: string | null = location.searchParams.get(param);
-                return {
-                  name: (name),
-                  source: (location),
-                };
-              }
-            }
-          };
-          const parseLinkBind: (node: CheerioElement) => ISource | undefined = parseLink.bind(this);
+          const parseLink = parseLinkFn(this, $);
 
           // Series Content Node
           const contentNode = $("#main_content > table.series_content_table > tbody > tr > td > div:nth-child(1)");
@@ -204,8 +186,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
 
           // Related
           const relatedNodes = contentNode.find("div:nth-child(3) > div > div:nth-child(8) > a");
-          const related: ISource[] = relatedNodes.toArray()
-            .map((node) => parseLinkBind(node))
+          const related: ISource[] = relatedNodes.toArray().map(parseLink)
             .filter((relatedSource) => Boolean(relatedSource)) as ISource[];
 
           // Associated Names
@@ -224,8 +205,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
 
           // Groups Scanulating
           const groupsScanulatingNodes = contentNode.find("div:nth-child(3) > div > div:nth-child(14) > a");
-          const groupsScanulating = groupsScanulatingNodes.toArray()
-            .map((node) => parseLinkBind(node))
+          const groupsScanulating = groupsScanulatingNodes.toArray().map(parseLink)
             .filter((groupsScanulatingSource) => Boolean(groupsScanulatingSource)) as ISource[];
 
           // Status
@@ -243,7 +223,8 @@ export class MangaUpdates extends ProviderCore implements IProvider {
             .filter((genre: Genre) => genre !== Genre.Unknown);
 
           const categories = contentNode.find("#ajax_tag_data > ul > li > a")
-            .toArray().map((node) => $(node).text().trim());
+            .toArray().map(parseLink)
+            .filter((categorySource) => Boolean(categorySource)) as ISource[];
 
           const categoryRecommendations: ISource[] = contentNode.find("div:nth-child(4) > div > div:nth-child(11) > a")
             .toArray().map((node) => {
@@ -307,6 +288,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
               artists: (artists),
               associatedNames: (associatedNames),
               authors: (authors),
+              categories: (categories),
               covers: (covers),
               description: (description),
               genres: (genres),
@@ -315,7 +297,6 @@ export class MangaUpdates extends ProviderCore implements IProvider {
               type: (type),
             },
             meta: {
-              categories: (categories),
               categoryRecommendations: (categoryRecommendations),
               completelyScanulated: (completelyScanulated),
               groupsScanulating: (groupsScanulating),
@@ -325,7 +306,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
             },
             name: (name),
             source: (source.source),
-          };
+          } as IDetails;
         });
     }
   }

@@ -1,4 +1,4 @@
-/* tslint:disable:no-string-literal */
+/* tslint:disable:no-string-literal max-line-length */
 /// <reference types="mocha"/>
 import { expect } from "chai";
 import { CloudKicker } from "cloudkicker";
@@ -119,6 +119,13 @@ describe("NovelUpdates Tests", function() {
 
     [
       {
+        categories: [
+          "Demon Lord", "Demons", "Game Elements", "Gods", "Heroes",
+          "Human-Nonhuman Relationship", "Hunters", "Kingdoms", "Level System",
+          "Male Protagonist", "Merchant", "Monsters", "Nobles",
+          "Overpowered Protagonist", "Saving the World", "Sword And Magic",
+          "Thieves", "Weak to Strong", "Wizards",
+        ],
         description: (desc: string) => {
           expect(desc).to.include("In this world, the concept of");
           expect(desc).to.include("bestowed by the Gods a special");
@@ -133,11 +140,25 @@ describe("NovelUpdates Tests", function() {
           Genre.Drama, Genre.Fantasy, Genre.Shounen,
         ],
         name: "LV999 Villager",
+        recommendations: [
+          {
+            name: "Murabito Desu Ga Nani Ka?",
+            source: new URL("https://www.novelupdates.com/series/murabito-desu-ga-nani-ka/"),
+          }, {
+            name: "Reincarnated as a Villager ~ Strongest Slow-life",
+            source: new URL("https://www.novelupdates.com/series/reincarnated-as-a-villager-strongest-slow-life/"),
+          },
+        ],
         searchInfo: {
           fixture: "NovelUpdates/search_LV999_Villager.html",
           href: "https://www.novelupdates.com/?post_type=seriesplans&s=LV999+Villager",
         },
       }, {
+        categories: [
+          "Game Elements", "Gate To Another World", "Hard-working Male Lead",
+          "Hunters", "Magic", "Male Protagonist", "Post-apocalyptic",
+          "Siblings", "Skill Creation", "Skills", "Younger Sisters",
+        ],
         description: (desc: string) => {
           expect(desc).to.include("kept Hyun-Soo busy");
           expect(desc).to.include("was doing a side job");
@@ -152,12 +173,24 @@ describe("NovelUpdates Tests", function() {
           Genre.Supernatural,
         ],
         name: "The Skill Maker",
+        recommendations: [
+          {
+            name: "Goblin Kingdom",
+            source: new URL("https://www.novelupdates.com/series/goblin-kingdom/"),
+          }, {
+            name: "I Never Run Out of Mana",
+            source: new URL("https://www.novelupdates.com/series/i-never-run-out-of-mana/"),
+          },
+        ],
         searchInfo: {
           fixture: "NovelUpdates/search_The_Skill_Maker.html",
           href: "https://www.novelupdates.com/?post_type=seriesplans&s=The+Skill+Maker",
         },
       },
-    ].forEach(({name, detailsInfo, searchInfo, description, genres}) => {
+    ].forEach(({
+      name, detailsInfo, searchInfo,
+      description, genres, recommendations, categories,
+    }) => {
       it(`should return search result for ${name}`, () => {
         const source: ISource = {
           name: (name),
@@ -201,9 +234,24 @@ describe("NovelUpdates Tests", function() {
             if (!details.about) { throw new Error("about is not defined"); }
             if (!details.about.genres) { throw new Error("about.genres is not defined"); }
             expect(details.about.genres).to.be.ok;
-            expect(details.about.genres).to.have.members(genres);
-            if (!details.about.description) { throw new Error("about.description is not defined"); }
-            description(details.about.description);
+            for (const genre of genres) {
+              expect(details.about.genres).to.include(genre);
+            }
+            if (!details.about.categories) { throw new Error("about.categories is not defined"); }
+            expect(details.about.categories).to.be.ok;
+            const cats = details.about.categories.map((c) => c.name);
+            for (const category of categories) {
+              expect(cats).to.deep.include(category);
+            }
+
+            if (description && !details.about.description) { throw new Error("about.description is not defined"); }
+            description(details.about.description as string);
+
+            if (!details.meta) { throw new Error("meta is not defined"); }
+            if (!details.meta.recommendations) { throw new Error("meta.recommendations is not defined"); }
+            for (const recommendation of recommendations) {
+              expect(details.meta.recommendations).to.deep.include(recommendation);
+            }
           });
       });
     });

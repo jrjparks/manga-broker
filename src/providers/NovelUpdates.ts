@@ -3,6 +3,8 @@ import cheerio = require("cheerio");
 // import path = require("path");
 import { URL } from "url";
 
+import { parseLinkFn } from "../util/cheerio";
+
 import { ICacheScoredResult } from "../cache";
 
 import {
@@ -80,6 +82,7 @@ export class NovelUpdates extends ProviderCore implements IAuthentableProvider {
       return Promise.reject(new Error("password is not supplied"));
     } else { // Try to authenticate
       const authURL: URL = new URL("/login/", this.baseURL);
+      authURL.protocol = this.baseURL.protocol;
       const authData: string = _.transform({
         "_wp_original_http_referer": this.baseURL.href,
         "action": "login",
@@ -117,9 +120,7 @@ export class NovelUpdates extends ProviderCore implements IAuthentableProvider {
           }, true)
             && usernameMatch.test(body);
           if (!this.authenticated) { throw new Error("Unable to authenticate."); }
-          const secKey: RegExpMatchArray = body.match(
-            new RegExp("/logout/?_wpnonce=(\\w+)"),
-          ) as RegExpMatchArray;
+          const secKey: RegExpMatchArray = body.match(/\/logout\/\?_wpnonce\=(\w+)/) as RegExpMatchArray;
           this.secureKey = secKey ? secKey[1] : "";
           return this;
         });
@@ -131,6 +132,7 @@ export class NovelUpdates extends ProviderCore implements IAuthentableProvider {
     this.authenticated = false;
     if (!_.isEmpty(this.secureKey)) {
       const authURL: URL = new URL(`/logout/?_wpnonce=${this.secureKey}`, this.baseURL);
+      authURL.protocol = this.baseURL.protocol;
       await this.cloudkicker.get(authURL);
     }
     this.cloudkicker.clearCookieJar();
@@ -157,6 +159,7 @@ export class NovelUpdates extends ProviderCore implements IAuthentableProvider {
       return this.cloudkicker.get(source.source, { Referer: source.source.href })
         .then(({response}) => {
           const $ = cheerio.load(response.body);
+          const parseLink = parseLinkFn(this, $);
 
           const name: string = $([
             "body", "div.l-canvas.type_wide.col_contside.headerlayout_standard.headerpos_static",
@@ -197,18 +200,42 @@ export class NovelUpdates extends ProviderCore implements IAuthentableProvider {
           const artists: string[] = $("#artiststag")
             .toArray().map((node) => $(node).text().trim());
 
+          const recommendations: ISource[] = $("div.wpb_text_column > div > a.genre")
+            .toArray().map((node) => {
+              const element = $(node);
+              const recommendationName = element.text().trim();
+              const location = new URL(element.attr("href"), this.baseURL);
+              location.protocol = this.baseURL.protocol;
+              return {
+                name: (recommendationName),
+                source: (location),
+              };
+            });
+
+          const categories: ISource[] = $("#etagme").toArray().map(parseLink)
+            .filter((relatedSource) => Boolean(relatedSource)) as ISource[];
+
           return {
             about: {
               artists: (artists),
               associatedNames: (associatedNames),
               authors: (authors),
+              categories: (categories),
               covers: (covers),
               description: (description),
               genres: (genres),
             },
+            meta: {
+              // categoryRecommendations: (categoryRecommendations),
+              // completelyScanulated: (completelyScanulated),
+              // groupsScanulating: (groupsScanulating),
+              // publisher: (publisher),
+              recommendations: (recommendations),
+              // related: (related),
+            },
             name: (name),
             source: (source.source),
-          } as IDetails;
+          };
         });
     }
   }
@@ -221,6 +248,7 @@ export class NovelUpdates extends ProviderCore implements IAuthentableProvider {
     const query: boolean = this.searchCache.isEmpty || result.score < 0.9;
     if (query) {
       const queryUrl = new URL("/?post_type=seriesplans", this.baseURL);
+      queryUrl.protocol = this.baseURL.protocol;
       queryUrl.searchParams.set("s", title);
       return this.cloudkicker.get(queryUrl)
         .then(({response}) => {
