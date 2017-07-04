@@ -21,7 +21,7 @@ import {
 import {
   IAuthentableProvider,
   ProviderCore,
-} from "../provider";
+} from "./provider";
 
 import { ValueMapper } from "../ValueMapper";
 const GenreMap: ValueMapper<Genre> = new ValueMapper<Genre>({
@@ -140,16 +140,56 @@ export class NovelUpdates extends ProviderCore implements IAuthentableProvider {
   }
 
   public async search(title: string, options?: ISearchOptions): Promise<ISearchResults> {
-    return this.querySearchCache(title)
-      .then((result) => {
+    const opts: ISearchOptions = _.extend({
+      fuzzy: false,
+      limit: 10,
+      page: 1,
+    }, options || {} as ISearchOptions, {
+      excludeNovels: false,
+    });
+    const queryUrl = new URL(`/page/${opts.page}/`, this.baseURL);
+    queryUrl.protocol = this.baseURL.protocol;
+    queryUrl.searchParams.set("s", title);
+    queryUrl.searchParams.set("post_type", "seriesplans");
+    return this.cloudkicker.get(queryUrl)
+      .then(({response}) => {
+        const $ = cheerio.load(response.body);
+        const selector = [
+          "body", "div.l-canvas.type_wide.col_contside.headerlayout_standard.headerpos_static",
+          "div.l-main", "div", "div", "div.l-content", "div.w-blog",
+          "div.w-blog-list", "div.w-blog-entry",
+        ].join(" > ");
+        const nodes = $(selector);
+        const results = nodes.toArray().map((node) => {
+          const element = $(node).find("div > a");
+          const name = element.text().trim();
+          const value = element.attr("href").trim();
+          const location = new URL(value, this.baseURL);
+          location.protocol = this.baseURL.protocol;
+          const result = {
+            name: (name),
+            source: (location),
+          };
+          // Update the cache
+          this.searchCache.update(name, result);
+          return result;
+        });
+        const hasNextPage: boolean = Boolean($("a.next.page-numbers").length === 1);
+        const hasPreviousPage: boolean = Boolean($("a.prev.page-numbers").length === 1);
+        const pageText = $("div.digg_pagination > nav > div.nav-links > span.page-numbers.current > span").text();
+        const page: number = parseInt(pageText, 10) || opts.page as number;
         return {
-          hasNextPage: false,
-          hasPreviousPage: false,
-          options: (options),
-          page: 1,
-          results: [result.value],
+          hasNextPage: (hasNextPage),
+          hasPreviousPage: (hasPreviousPage),
+          options: (opts),
+          page: (page),
+          results: (results),
         } as ISearchResults;
       });
+  }
+
+  public async find(title: string): Promise<ISource> {
+    return this.querySearchCache(title).then((result) => result.value as ISource);
   }
 
   public async details(source: ISource): Promise<IDetails> {
@@ -187,12 +227,15 @@ export class NovelUpdates extends ProviderCore implements IAuthentableProvider {
             .filter((genre: Genre) => genre !== Genre.Unknown);
 
           const coverNode: Cheerio = $("div.seriesimg > img");
-          const covers: ICover[] = coverNode ? [{
-            MIME: "image/jpeg",
-            Normal: new URL(coverNode.attr("src").trim()),
-            side: CoverSide.Front,
-            volume: 0,
-          }] : [];
+          const covers: ICover[] = [];
+          if (coverNode) {
+            covers.push({
+              MIME: "image/jpeg",
+              Normal: new URL(coverNode.attr("src").trim()),
+              side: CoverSide.Front,
+              volume: 0,
+            });
+          }
 
           const authors: string[] = $("#authtag")
             .toArray().map((node) => $(node).text().trim());
@@ -242,40 +285,15 @@ export class NovelUpdates extends ProviderCore implements IAuthentableProvider {
 
   protected async querySearchCache(title: string): Promise<ICacheScoredResult<ISource>> {
     let result: ICacheScoredResult<ISource> = { key: "", value: undefined, score: 0 };
-    if (!this.searchCache.isEmpty) {
-      result = this.searchCache.bestMatch(title);
-    }
+    if (!this.searchCache.isEmpty) { result = this.searchCache.bestMatch(title); }
     const query: boolean = this.searchCache.isEmpty || result.score < 0.9;
     if (query) {
-      const queryUrl = new URL("/?post_type=seriesplans", this.baseURL);
-      queryUrl.protocol = this.baseURL.protocol;
-      queryUrl.searchParams.set("s", title);
-      return this.cloudkicker.get(queryUrl)
-        .then(({response}) => {
-          const $ = cheerio.load(response.body);
-          const selector = [
-            "body", "div.l-canvas.type_wide.col_contside.headerlayout_standard.headerpos_static",
-            "div.l-main", "div", "div", "div.l-content", "div.w-blog",
-            "div.w-blog-list", "div.w-blog-entry",
-          ].join(" > ");
-          const nodes = $(selector);
-          return nodes.toArray().reduce((cache, node) => {
-            const element = $(node).find("div > a");
-            const name = element.text().trim();
-            const value = element.attr("href").trim();
-            const location = new URL(value, this.baseURL);
-            location.protocol = this.baseURL.protocol;
-            return cache.update(name, {
-              name: (name),
-              source: (location),
-            });
-          }, this.searchCache);
-        }).then((cache) => {
-          result = cache.bestMatch(title);
-          if (result.score >= 0.9) {
-            return result;
-          } else { throw new Error(`Title not found. Closest match: ${result.key}@${result.score}`); }
-        });
+      return this.search(title).then(() => {
+        result = this.searchCache.bestMatch(title);
+        if (result.score >= 0.9) {
+          return result;
+        } else { throw new Error(`Title not found. Closest match: ${result.key}@${result.score}`); }
+      });
     } else { return Promise.resolve(result); }
   }
 }

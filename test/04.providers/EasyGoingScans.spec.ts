@@ -51,7 +51,7 @@ describe("EasyGoingScans Tests", function() {
         get.withArgs(sinon.match({ href: "http://read.egscans.com/" }))
           .resolves({ response: { body: utils.getFixture("EasyGoingScans/search.html") } });
       }
-      return egscans.search("One Punch-Man")
+      return egscans.find("One Punch-Man")
         .then(utils.unexpectedPromise)
         .catch((error) => {
           expect(error).to.be.ok;
@@ -68,6 +68,21 @@ describe("EasyGoingScans Tests", function() {
       return egscans.search("Knights & Magic")
         .then(({results}) => {
           const result = results[0];
+          expect(result.name).to.be.ok;
+          expect(result.name).to.be.equal("Knights and Magic");
+          expect(result.source).to.be.ok;
+          expect(result.source.href).to.be.equal("http://read.egscans.com/Knights_and_Magic");
+        });
+    });
+
+    it("should return find result for 'Knights & Magic'", () => {
+      if (local) {
+        const get = sandbox.stub(cloudkicker, "get");
+        get.withArgs(sinon.match({ href: "http://read.egscans.com/" }))
+          .resolves({ response: { body: utils.getFixture("EasyGoingScans/search.html") } });
+      }
+      return egscans.find("Knights & Magic")
+        .then((result) => {
           expect(result.name).to.be.ok;
           expect(result.name).to.be.equal("Knights and Magic");
           expect(result.source).to.be.ok;

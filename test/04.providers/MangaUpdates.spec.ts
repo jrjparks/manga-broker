@@ -48,7 +48,7 @@ describe("MangaUpdates Tests", function() {
         });
     });
 
-    it("should return search results for 'One Punch-Man' from cache", () => {
+    it("should return find results for 'One Punch-Man' from cache", () => {
       if (local) {
         sandbox.stub(cloudkicker, "get")
           .resolves({
@@ -57,25 +57,17 @@ describe("MangaUpdates Tests", function() {
             },
           });
       }
-      return mangaupdates.search("One Punch-Man", { fuzzy: true })
-        .then(({results}) => {
-          expect(results).to.be.ok;
-          expect(results).to.have.lengthOf(1);
-          const result: IDetails = results[0];
+      return mangaupdates.find("One Punch-Man")
+        .then((result) => {
           expect(result).to.be.ok;
-          if (!result.about) {
-            throw new Error("about is not defined");
-          }
-          expect(result.about).to.be.ok;
-          if (!result.about.genres) {
-            throw new Error("about.genres is not defined");
-          }
-          expect(result.about.genres).to.be.ok;
-          expect(result.about.genres).to.have.members([Genre.Action, Genre.Comedy, Genre.Fantasy, Genre.Mature]);
+          expect(result.name).to.be.ok;
+          expect(result.name).to.be.equal("One Punch-Man");
+          expect(result.source).to.be.ok;
+          expect(result.source.href).to.be.equal("https://www.mangaupdates.com/series.html?id=80345");
         });
     });
 
-    it("should fail search results for 'Blah Blah'", () => {
+    it("should fail find results for 'Blah Blah'", () => {
       if (local) {
         sandbox.stub(cloudkicker, "get")
           .resolves({
@@ -84,7 +76,7 @@ describe("MangaUpdates Tests", function() {
             },
           });
       }
-      return mangaupdates.search("Blah Blah")
+      return mangaupdates.find("Blah Blah")
         .then(utils.unexpectedPromise)
         .catch((error: Error) => {
           expect(error).to.be.ok;

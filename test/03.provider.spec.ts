@@ -1,5 +1,5 @@
 /// <reference types="mocha"/>
-import { ProviderCore } from "../src/provider";
+import { ProviderCore } from "../src/providers/provider";
 
 describe("ProviderCore Tests", () => {
   const providercore = new ProviderCore();

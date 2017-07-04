@@ -138,22 +138,22 @@ describe("Batoto Tests", () => {
     [
       {
         fixture: "Batoto/search_knights_magic.html",
-        href: "https://bato.to/search?name=Knights+%26+Magic&name_cond=c",
+        href: "https://bato.to/search?name=Knights+%26+Magic&name_cond=c&p=1",
         name: "Knights & Magic",
-        sourceHref: "http://bato.to/comic/_/knights-magic-r19716",
+        sourceHref: "https://bato.to/comic/_/knights-magic-r19716",
       }, {
         fixture: "Batoto/search_one_piece.html",
-        href: "https://bato.to/search?name=One+Piece&name_cond=c",
+        href: "https://bato.to/search?name=One+Piece&name_cond=c&p=1",
         name: "One Piece",
-        sourceHref: "http://bato.to/comic/_/one-piece-r39",
+        sourceHref: "https://bato.to/comic/_/one-piece-r39",
       }, {
         fixture: "Batoto/search_tensei_shitara_slime_datta_ken.html",
-        href: "https://bato.to/search?name=Tensei+Shitara+Slime+Datta+Ken&name_cond=c",
+        href: "https://bato.to/search?name=Tensei+Shitara+Slime+Datta+Ken&name_cond=c&p=1",
         name: "Tensei Shitara Slime Datta Ken",
-        sourceHref: "http://bato.to/comic/_/tensei-shitara-slime-datta-ken-r15553",
+        sourceHref: "https://bato.to/comic/_/tensei-shitara-slime-datta-ken-r15553",
       },
     ].forEach(({name, sourceHref, href, fixture}) => {
-      it(`should get search result for '${name}'`, () => {
+      it(`should get find result for '${name}'`, () => {
         const source: ISource = {
           name: (name),
           source: new URL(href),
@@ -165,22 +165,21 @@ describe("Batoto Tests", () => {
           get.withArgs(sinon.match({ href: (source.source.href) }))
             .resolves({ response: { body: utils.getFixture(fixture) } });
         }
-        return batoto.authenticate(username, password).then(() =>
-          batoto.search(name).then(({results}) => {
-            expect(results).to.be.ok;
-            const result = results[0];
+        return batoto.authenticate(username, password).then(() => {
+          return batoto.find(name).then((result) => {
             expect(result.name).to.be.ok;
             expect(result.name).to.be.equal(name);
             expect(result.source).to.be.ok;
             expect(result.source.href).to.be.equal(sourceHref);
-          }));
+          });
+        });
       });
     });
     if (local) {
-      it("should get search result for 'Knights & Magic' from cache", () => {
+      it("should get find result for 'Knights & Magic' from cache", () => {
         const name = "Knights & Magic";
         const href = "https://bato.to/search?name=Knights+%26+Magic&name_cond=c";
-        const sourceHref = "http://bato.to/comic/_/knights-magic-r19716";
+        const sourceHref = "https://bato.to/comic/_/knights-magic-r19716";
         const source: ISource = {
           name: (name),
           source: new URL(href),
@@ -193,9 +192,7 @@ describe("Batoto Tests", () => {
             .rejects(new Error("This should have hit the local cache."));
         }
         return batoto.authenticate(username, password).then(() =>
-          batoto.search(name).then(({results}) => {
-            expect(results).to.be.ok;
-            const result = results[0];
+          batoto.find(name).then((result) => {
             expect(result.name).to.be.ok;
             expect(result.name).to.be.equal(name);
             expect(result.source).to.be.ok;

@@ -120,9 +120,9 @@ describe("NovelUpdates Tests", function() {
     [
       {
         categories: [
-          "Demon Lord", "Demons", "Game Elements", "Gods", "Heroes",
-          "Human-Nonhuman Relationship", "Hunters", "Kingdoms", "Level System",
-          "Male Protagonist", "Merchant", "Monsters", "Nobles",
+          "Adapted to Manga", "Demon Lord", "Demons", "Game Elements", "Gods",
+          "Heroes", "Human-Nonhuman Relationship", "Hunters", "Kingdoms",
+          "Level System", "Male Protagonist", "Merchants", "Monsters", "Nobles",
           "Overpowered Protagonist", "Saving the World", "Sword And Magic",
           "Thieves", "Weak to Strong", "Wizards",
         ],
@@ -151,13 +151,13 @@ describe("NovelUpdates Tests", function() {
         ],
         searchInfo: {
           fixture: "NovelUpdates/search_LV999_Villager.html",
-          href: "https://www.novelupdates.com/?post_type=seriesplans&s=LV999+Villager",
+          href: "https://www.novelupdates.com/page/1/?s=LV999+Villager&post_type=seriesplans",
         },
       }, {
         categories: [
-          "Game Elements", "Gate To Another World", "Hard-working Male Lead",
+          "Game Elements", "Gate To Another World", "Hard-Working Protagonist",
           "Hunters", "Magic", "Male Protagonist", "Post-apocalyptic",
-          "Siblings", "Skill Creation", "Skills", "Younger Sisters",
+          "Siblings", "Skill Creation", "Younger Sisters",
         ],
         description: (desc: string) => {
           expect(desc).to.include("kept Hyun-Soo busy");
@@ -184,13 +184,35 @@ describe("NovelUpdates Tests", function() {
         ],
         searchInfo: {
           fixture: "NovelUpdates/search_The_Skill_Maker.html",
-          href: "https://www.novelupdates.com/?post_type=seriesplans&s=The+Skill+Maker",
+          href: "https://www.novelupdates.com/page/1/?s=The+Skill+Maker&post_type=seriesplans",
         },
       },
     ].forEach(({
       name, detailsInfo, searchInfo,
       description, genres, recommendations, categories,
     }) => {
+      it(`should return find result for ${name}`, () => {
+        const source: ISource = {
+          name: (name),
+          source: new URL(searchInfo.href),
+        };
+        if (local) {
+          const get = sandbox.stub(cloudkicker, "get");
+          // const post = sandbox.stub(cloudkicker, "post");
+          // handleAuth(get, post);
+          get.withArgs(sinon.match({ href: (source.source.href) }))
+            .resolves({ response: { body: utils.getFixture(searchInfo.fixture) } });
+        }
+        return provider.find(name)
+          .then((result) => {
+            expect(result).to.be.ok;
+            expect(result.name).to.be.ok;
+            expect(result.name).to.be.equal(name);
+            expect(result.source).to.be.ok;
+            expect(result.source.href).to.be.equal(detailsInfo.href);
+          });
+      });
+
       it(`should return search result for ${name}`, () => {
         const source: ISource = {
           name: (name),

@@ -11,7 +11,7 @@ import {
   isNovelProvider,
   isProvider,
   isSourceProvider,
-} from "../src/provider";
+} from "../src/providers/provider";
 export const CI = process.env.CI;
 
 export function getFixture(path: string) {

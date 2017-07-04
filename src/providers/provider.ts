@@ -4,7 +4,7 @@ import { Url } from "url";
 
 import {
   ScoredCache,
-} from "./cache";
+} from "../cache";
 import {
   IChapter,
   IDetails,
@@ -12,13 +12,16 @@ import {
   ISearchResults,
   ISource,
   ProviderType,
-} from "./models";
+} from "../models";
 
 export interface IProvider {
   readonly is: string;
   readonly baseURL: Url;
   readonly provides: ProviderType;
+  /**  */
   search(title: string, options ?: ISearchOptions): Promise<ISearchResults>;
+  /** Similar to search except it will only return the closest match. */
+  find(title: string): Promise<ISource>;
   details(source: ISource): Promise<IDetails>;
 }
 
@@ -42,6 +45,7 @@ export function isProvider(provider: IProvider): provider is IProvider {
     (provider as IProvider).is !== undefined &&
     (provider as IProvider).baseURL !== undefined &&
     (provider as IProvider).search !== undefined &&
+    (provider as IProvider).find !== undefined &&
     (provider as IProvider).details !== undefined;
 }
 
@@ -68,11 +72,11 @@ export class ProviderCore {
   protected readonly searchCache: ScoredCache<ISource> = new ScoredCache<ISource>();
 
   // this constructor is really only used for testing
-  constructor(cloudkicker?: CloudKicker) {
+  constructor(cloudkicker ?: CloudKicker) {
     this.cloudkicker = cloudkicker || new CloudKicker();
   }
 
-    public clearCache(): void {
+  public clearCache(): void {
     this.searchCache.clear();
   }
 }

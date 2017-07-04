@@ -45,14 +45,14 @@ describe("MangaPanda Tests", function() {
         });
     });
 
-    it("should fail search 'Knights & Magic'", function() {
+    it("should fail find 'Knights & Magic'", function() {
       this.timeout(5000);
       this.slow(2000);
       if (local) {
         sandbox.stub(cloudkicker, "get")
           .resolves({ response: { body: utils.getFixture("MangaPanda/alphabetical.html") } });
       }
-      return mangapanda.search("Knights & Magic")
+      return mangapanda.find("Knights & Magic")
         .then(utils.unexpectedPromise)
         .catch((error) => {
           expect(error).to.be.ok;
@@ -85,14 +85,13 @@ describe("MangaPanda Tests", function() {
         name: (name),
         source: new URL(href),
       };
-      it(`should return search result for '${name}'`, () => {
+      it(`should return find result for '${name}'`, () => {
         if (local) {
           const get = sandbox.stub(cloudkicker, "get");
           get.resolves({ response: { body: utils.getFixture("MangaReader/alphabetical.html") } });
         }
-        return mangapanda.search(name)
-          .then(({results}) => {
-            const result = results[0];
+        return mangapanda.find(name)
+          .then((result) => {
             expect(result.name).to.be.ok;
             expect(result.source).to.be.ok;
             expect(result.name).to.be.equal(name);

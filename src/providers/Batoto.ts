@@ -18,8 +18,8 @@ import {
 } from "../models";
 
 import { ICacheScoredResult } from "../cache";
-import { IAuthentableProvider, ISourceProvider, ProviderCore } from "../provider";
 import { ValueMapper } from "../ValueMapper";
+import { IAuthentableProvider, ISourceProvider, ProviderCore } from "./provider";
 
 const GenreMap: ValueMapper<Genre> = new ValueMapper<Genre>({
   "4-Koma": Genre.FourKoma,
@@ -152,16 +152,56 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
     if (!this.isAuthenticated) {
       throw new Error("Provider requires authentication.");
     } else {
-      return this.querySearchCache(title)
-        .then((result) => {
+      const opts: ISearchOptions = _.extend({
+        excludeNovels: false,
+        fuzzy: false,
+        limit: 10,
+        page: 1,
+      }, options || {} as ISearchOptions);
+      const queryUrl = new URL("/search", this.baseURL);
+      queryUrl.searchParams.set("name", title);
+      queryUrl.searchParams.set("name_cond", "c");
+      queryUrl.searchParams.set("p", (opts.page as number).toString());
+      return this.cloudkicker.get(queryUrl, { Referer: queryUrl.href })
+        .then(({response}) => {
+          const $ = cheerio.load(response.body);
+          const selector = [
+            "#comic_search_results", "table", "tbody", "tr",
+            "td:nth-child(1)", "strong", "a",
+          ].join(" > ");
+          const nodes = $(selector);
+          const results = nodes.toArray().map((node) => {
+            const element = $(node);
+            const name = element.text().trim();
+            const value = element.attr("href").trim();
+            const location = new URL(value);
+            location.protocol = this.baseURL.protocol;
+            const result = {
+              name: (name),
+              source: (location),
+            };
+            this.searchCache.update(name, result);
+            return result;
+          });
+          const page: number = opts.page as number;
+          const hasNextPage = Boolean($("#show_more_row > td > input").length === 1);
+          const hasPreviousPage = Boolean(page > 1);
           return {
-            hasNextPage: false,
-            hasPreviousPage: false,
-            options: (options),
-            page: 1,
-            results: [result.value],
+            hasNextPage: (hasNextPage),
+            hasPreviousPage: (hasPreviousPage),
+            options: (opts),
+            page: (page),
+            results: (results),
           } as ISearchResults;
         });
+    }
+  }
+
+  public async find(title: string): Promise<ISource> {
+    if (!this.isAuthenticated) {
+      throw new Error("Provider requires authentication.");
+    } else {
+      return this.querySearchCache(title).then((result) => result.value as ISource);
     }
   }
 
@@ -366,33 +406,12 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
     }
     const query: boolean = this.searchCache.isEmpty || result.score < 0.9;
     if (query) {
-      const queryUrl = new URL("/search", this.baseURL);
-      queryUrl.searchParams.set("name", title);
-      queryUrl.searchParams.set("name_cond", "c");
-      return this.cloudkicker.get(queryUrl, { Referer: queryUrl.href })
-        .then(({response}) => {
-          const $ = cheerio.load(response.body);
-          const selector = [
-            "#comic_search_results", "table", "tbody", "tr",
-            "td:nth-child(1)", "strong", "a",
-          ].join(" > ");
-          const nodes = $(selector);
-          return nodes.toArray().reduce((cache, node) => {
-            const element = $(node);
-            const name = element.text().trim();
-            const value = element.attr("href").trim();
-            const location = new URL(value);
-            return cache.update(name, {
-              name: (name),
-              source: (location),
-            });
-          }, this.searchCache);
-        }).then((cache) => {
-          result = cache.bestMatch(title);
-          if (result.score >= 0.9) {
-            return result;
-          } else { throw new Error(`Title not found. Closest match: ${result.key}@${result.score}`); }
-        });
+      return this.search(title).then(() => {
+        result = this.searchCache.bestMatch(title);
+        if (result.score >= 0.9) {
+          return result;
+        } else { throw new Error(`Title not found. Closest match: ${result.key}@${result.score}`); }
+      });
     } else { return Promise.resolve(result); }
   }
 }

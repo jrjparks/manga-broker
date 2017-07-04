@@ -19,8 +19,8 @@ import {
 } from "../models";
 
 import { ICacheScoredResult } from "../cache";
-import { IProvider, ProviderCore } from "../provider";
 import { ValueMapper } from "../ValueMapper";
+import { IProvider, ProviderCore } from "./provider";
 
 const GenreMap: ValueMapper<Genre> = new ValueMapper<Genre>({
   "Action": Genre.Action,
@@ -67,88 +67,83 @@ export class MangaUpdates extends ProviderCore implements IProvider {
   public readonly provides: ProviderType = ProviderType.Database;
 
   public async search(title: string, options?: ISearchOptions): Promise<ISearchResults> {
-    options = _.extend({
+    const opts: ISearchOptions = _.extend({
       excludeNovels: true,
       fuzzy: false,
       limit: 100,
       page: 1,
     }, options || {});
     const searchParams: { [key: string]: any } = {
-      page: options.page,
-      perpage: options.limit,
-      search: (options.fuzzy ? title : `"${title}"`).replace(/\"+/g, "\""),
+      page: opts.page,
+      perpage: opts.limit,
+      search: (opts.fuzzy ? title : `"${title}"`).replace(/\"+/g, "\""),
       stype: "title",
     };
     const queryURL = new URL(this.baseURL.href);
     queryURL.pathname = "/series.html";
     _.mapKeys(searchParams, (value, key) => queryURL.searchParams.set(key, value));
 
-    return this.querySearchCache(title)
-      .then(({value}) => {
+    return this.cloudkicker.get(queryURL, { Referer: queryURL.href })
+      .then(({response}) => {
+        const $ = cheerio.load(response.body);
+
+        const pageSelector: string = [
+          "#main_content", "div", "table", "tbody", "tr:nth-last-child(4)", "td",
+          "table:nth-child(1)", "tr",
+        ].join(" > ");
+        const pageNodes = $(pageSelector);
+        const prevPageNode = pageNodes.find("td:nth-child(1) > a");
+        const currPageNode = pageNodes.find("td:nth-child(2) > b > font");
+        const nextPageNode = pageNodes.find("td:nth-child(3) > a");
+        const hasPreviousPage: boolean = Boolean(prevPageNode.length);
+        const page = currPageNode ? parseInt(currPageNode.text(), 10) : 1;
+        const hasNextPage: boolean = Boolean(nextPageNode.length);
+
+        let results: IDetails[] = $("#main_content > div > table").find("tr:has(td.text.pad)")
+          .toArray().map((node): IDetails => {
+            const element = $(node);
+            const titleNode = element.find("td:nth-child(1) > a");
+            const name = titleNode.text();
+            const isNovel = name.endsWith("(Novel)");
+            const genres: Genre[] = element.find("td:nth-child(2)").text()
+              .split(",").map((genre: string) => genre.trim())
+              .map((genre: string) => GenreMap.toValue(genre, Genre.Unknown))
+              .filter((genre: Genre) => genre !== Genre.Unknown);
+            const location = new URL(titleNode.attr("href"));
+            const id = parseInt(location.searchParams.get("id") as string, 10);
+            const releaseYear = parseInt(element.find("td:nth-child(3)").text(), 10);
+            const rating = parseInt(element.find("td:nth-child(4)").text(), 10);
+            const result: IDetails = {
+              about: {
+                genres: (genres),
+                rating: (rating),
+                releaseYear: (releaseYear),
+              },
+              meta: {
+                isNovel: (isNovel),
+              },
+              name: (name),
+              source: (location),
+            };
+            if (id >= 0) { this.searchCache.update(name, result); }
+            return result;
+          });
+        if (opts && opts.excludeNovels) {
+          results = results.filter((result) => !(result.meta && result.meta.isNovel));
+        }
+        if (results.length === 0) { throw new Error("Title not found."); }
         return {
-          hasNextPage: false,
-          hasPreviousPage: false,
-          options: (options),
-          page: 1,
-          results: [value],
+          hasNextPage: (hasNextPage),
+          hasPreviousPage: (hasPreviousPage),
+          options: (opts),
+          page: (page),
+          results: (results),
         } as ISearchResults;
-      }).catch(() => this.cloudkicker.get(queryURL, { Referer: queryURL.href })
-        .then(({response}) => {
-          const $ = cheerio.load(response.body);
+      });
+  }
 
-          const pageSelector: string = [
-            "#main_content", "div", "table", "tbody", "tr:nth-last-child(4)", "td",
-            "table:nth-child(1)", "tr",
-          ].join(" > ");
-          const pageNodes = $(pageSelector);
-          const prevPageNode = pageNodes.find("td:nth-child(1) > a");
-          const currPageNode = pageNodes.find("td:nth-child(2) > b > font");
-          const nextPageNode = pageNodes.find("td:nth-child(3) > a");
-          const hasPreviousPage: boolean = Boolean(prevPageNode.length);
-          const page = currPageNode ? parseInt(currPageNode.text(), 10) : 1;
-          const hasNextPage: boolean = Boolean(nextPageNode.length);
-
-          let results: IDetails[] = $("#main_content > div > table").find("tr:has(td.text.pad)")
-            .toArray().map((node): IDetails => {
-              const element = $(node);
-              const titleNode = element.find("td:nth-child(1) > a");
-              const name = titleNode.text();
-              const isNovel = name.endsWith("(Novel)");
-              const genres: Genre[] = element.find("td:nth-child(2)").text()
-                .split(",").map((genre: string) => genre.trim())
-                .map((genre: string) => GenreMap.toValue(genre, Genre.Unknown))
-                .filter((genre: Genre) => genre !== Genre.Unknown);
-              const location = new URL(titleNode.attr("href"));
-              const id = parseInt(location.searchParams.get("id") || "-1", 10);
-              const releaseYear = parseInt(element.find("td:nth-child(3)").text(), 10);
-              const rating = parseInt(element.find("td:nth-child(4)").text(), 10);
-              const result: IDetails = {
-                about: {
-                  genres: (genres),
-                  rating: (rating),
-                  releaseYear: (releaseYear),
-                },
-                meta: {
-                  isNovel: (isNovel),
-                },
-                name: (name),
-                source: (location),
-              };
-              if (id >= 0) { this.searchCache.update(name, result); }
-              return result;
-            });
-          if (options && options.excludeNovels) {
-            results = results.filter((result) => !(result.meta && result.meta.isNovel));
-          }
-          if (results.length === 0) { throw new Error("Title not found."); }
-          return {
-            hasNextPage: (hasNextPage),
-            hasPreviousPage: (hasPreviousPage),
-            options: (options),
-            page: (page),
-            results: (results),
-          } as ISearchResults;
-        }));
+  public async find(title: string): Promise<ISource> {
+    return this.querySearchCache(title).then((result) => result.value as ISource);
   }
 
   public async details(source: ISource): Promise<IDetails> {
@@ -312,11 +307,15 @@ export class MangaUpdates extends ProviderCore implements IProvider {
   }
 
   protected async querySearchCache(title: string): Promise<ICacheScoredResult<ISource>> {
-    return new Promise<ICacheScoredResult<ISource>>((resolve, reject) => {
-      const result = this.searchCache.bestMatch(title);
+    let result: ICacheScoredResult<ISource> = { key: "", value: undefined, score: 0 };
+    if (!this.searchCache.isEmpty) { result = this.searchCache.bestMatch(title); }
+    const query: boolean = this.searchCache.isEmpty || result.score < 0.9;
+    if (query) {
+      await this.search(title);
+      result = this.searchCache.bestMatch(title);
       if (result.score >= 0.9) {
-        return resolve(result);
-      } else { return reject(new Error(`Title not found. Closest match: ${result.key}@${result.score}`)); }
-    });
+        return result;
+      } else { throw new Error(`Title not found. Closest match: ${result.key}@${result.score}`); }
+    } else { return Promise.resolve(result); }
   }
 }

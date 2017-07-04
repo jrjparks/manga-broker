@@ -9,6 +9,7 @@ import {
   IChapter,
   ICover,
   IDetails,
+  ISearchOptions,
   ISearchResults,
   ISource,
   ProviderType,
@@ -16,9 +17,9 @@ import {
 } from "../models";
 
 import { ICacheScoredResult, ScoredCache } from "../cache";
-import { ISourceProvider, ProviderCore } from "../provider";
 import { StringUtil } from "../util/string";
 import { ValueMapper } from "../ValueMapper";
+import { ISourceProvider, ProviderCore } from "./provider";
 
 const GenreMap: ValueMapper<Genre> = new ValueMapper<Genre>({
   "Action": Genre.Action,
@@ -65,17 +66,54 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
   public readonly baseURL: URL = new URL("http://www.mangareader.net");
   public readonly provides: ProviderType = ProviderType.Comic;
 
-  public async search(title: string, options?: any): Promise<ISearchResults> {
-    return this.querySearchCache(title)
-      .then((result) => {
-        return {
-          hasNextPage: false,
-          hasPreviousPage: false,
-          options: (options),
-          page: 1,
-          results: [result.value],
-        } as ISearchResults;
+  public async search(title: string, options?: ISearchOptions): Promise<ISearchResults> {
+    const opts: ISearchOptions = _.extend({
+      excludeNovels: false,
+      fuzzy: false,
+      page: 1,
+    }, options || {} as ISearchOptions, {
+      limit: 30,
+    });
+    const queryUrl: URL = new URL("/search/", this.baseURL);
+    const p: number = ((opts.page as number) - 1) * (opts.limit as number);
+    queryUrl.searchParams.set("w", title);
+    queryUrl.searchParams.set("rd", "0");
+    queryUrl.searchParams.set("status", "0");
+    queryUrl.searchParams.set("order", "0");
+    queryUrl.searchParams.set("genre", "0000000000000000000000000000000000000");
+    queryUrl.searchParams.set("p", p.toString());
+    return this.cloudkicker.get(queryUrl, { Referer: queryUrl.href }).then(({response}) => {
+      const $ = cheerio.load(response.body);
+      const selector = ["#mangaresults", "div.mangaresultitem"].join(" > ");
+      const nodes = $(selector);
+      const results = nodes.toArray().map((node) => {
+        const element = $(node);
+        const nameElement = element.find("div.manga_name > div > h3 > a");
+        const name = nameElement.text().trim();
+        const value = nameElement.attr("href").trim();
+        const location = new URL(value, this.baseURL);
+        const result = {
+          name: (name),
+          source: (location),
+        };
+        this.searchCache.update(name, result);
+        return result;
       });
+      const page: number = opts.page as number;
+      const hasNextPage = [">", "Last"].indexOf($("#sp > a").last().text()) !== -1;
+      const hasPreviousPage = Boolean(page > 1);
+      return {
+        hasNextPage: (hasNextPage),
+        hasPreviousPage: (hasPreviousPage),
+        options: (opts),
+        page: (page),
+        results: (results),
+      } as ISearchResults;
+    });
+  }
+
+  public async find(title: string): Promise<ISource> {
+    return this.querySearchCache(title).then((result) => result.value as ISource);
   }
 
   public async details(source: ISource): Promise<IDetails> {
@@ -110,12 +148,15 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
 
           const coverNode = $("#mangaimg > img");
           const coverLocation = new URL(coverNode.attr("src"));
-          const covers: ICover[] = coverNode ? [{
-            MIME: "image/jpeg",
-            Thumbnail: (coverLocation),
-            side: CoverSide.Front,
-            volume: 1,
-          }] : [];
+          const covers: ICover[] = [];
+          if (coverNode) {
+            covers.push({
+              MIME: "image/jpeg",
+              Thumbnail: (coverLocation),
+              side: CoverSide.Front,
+              volume: 1,
+            });
+          }
 
           return {
             about: {

@@ -1,4 +1,4 @@
-/* tslint:disable:no-string-literal */
+/* tslint:disable:no-string-literal max-line-length */
 /// <reference types="mocha"/>
 import _ = require("lodash");
 import { expect } from "chai";
@@ -46,19 +46,56 @@ describe("MangaReader Tests", function() {
         });
     });
 
-    it("should fail search 'Knights & Magic'", function() {
+    it("should fail find 'Knights & Magic'", function() {
       this.timeout(5000);
       this.slow(2000);
       if (local) {
         sandbox.stub(cloudkicker, "get")
           .resolves({ response: { body: utils.getFixture("MangaReader/alphabetical.html") } });
       }
-      return mangareader.search("Knights & Magic")
+      return mangareader.find("Knights & Magic")
         .then(utils.unexpectedPromise)
         .catch((error) => {
           expect(error).to.be.ok;
           expect(error.message).to.be.contain("Title not found.");
         });
+    });
+
+    [{
+      fixture: "MangaReader/search_one_punch_man.html",
+      href: "http://www.mangareader.net/search/?w=One+Punch-Man&rd=0&status=0&order=0&genre=0000000000000000000000000000000000000&p=0",
+      results: [{
+        name: "Onepunch-Man",
+        source: new URL("http://www.mangareader.net/onepunch-man"),
+      }, {
+        name: "OnePunch-Man (ONE)",
+        source: new URL("http://www.mangareader.net/onepunch-man-one"),
+      }],
+      term: "One Punch-Man",
+    },
+  ].forEach(({term, href, fixture, results}) => {
+      it(`should return search result for '${term}'`, () => {
+        if (local) {
+          const get = sandbox.stub(cloudkicker, "get");
+          // const post = sandbox.stub(cloudkicker, "post");
+          get.withArgs(sinon.match({ href: (href) }))
+            .resolves({ response: { body: utils.getFixture(fixture) } });
+        }
+        return mangareader.search(term)
+          .then((searchResults) => {
+            expect(searchResults).to.be.ok;
+            expect(searchResults.hasNextPage).to.be.false;
+            expect(searchResults.hasPreviousPage).to.be.false;
+            expect(searchResults.options).to.be.ok;
+            expect(searchResults.page).to.be.equal(1);
+
+            expect(searchResults.results).to.be.ok;
+            expect(searchResults.results).to.have.lengthOf(results.length);
+            for (const result of results) {
+              expect(searchResults.results).to.deep.include(result);
+            }
+          });
+      });
     });
 
     [{
@@ -76,14 +113,13 @@ describe("MangaReader Tests", function() {
         source: new URL(href),
       };
 
-      it(`should return search result for '${name}'`, () => {
+      it(`should return find result for '${name}'`, () => {
         if (local) {
           sandbox.stub(cloudkicker, "get")
             .resolves({ response: { body: utils.getFixture("MangaReader/alphabetical.html") } });
         }
-        return mangareader.search(name)
-          .then(({results}) => {
-            const result = results[0];
+        return mangareader.find(name)
+          .then((result) => {
             expect(result.name).to.be.ok;
             expect(result.source).to.be.ok;
             expect(result.name).to.be.equal(name);

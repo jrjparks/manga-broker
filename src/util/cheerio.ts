@@ -1,7 +1,7 @@
 ///  <reference types="cheerio"/>
 import { URL } from "url";
 import { ISource } from "../models";
-import { IProvider } from "../provider";
+import { IProvider } from "../providers";
 export function parseLinkFn(self: IProvider, $: CheerioStatic): (node: CheerioElement) => ISource | undefined {
   const parseLink = (node: CheerioElement): ISource | undefined => {
     const element = $(node);

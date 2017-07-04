@@ -1,3 +1,4 @@
+import _ = require("lodash");
 import cheerio = require("cheerio");
 import path = require("path");
 import { URL } from "url";
@@ -12,7 +13,7 @@ import {
 } from "../models";
 
 import { ICacheScoredResult, ScoredCache } from "../cache";
-import { ISourceProvider, ProviderCore } from "../provider";
+import { ISourceProvider, ProviderCore } from "./provider";
 
 export class EasyGoingScans extends ProviderCore implements ISourceProvider {
   public readonly is: string = "EasyGoingScans";
@@ -20,16 +21,27 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
   public readonly provides: ProviderType = ProviderType.Comic;
 
   public async search(title: string, options?: ISearchOptions): Promise<ISearchResults> {
+    const opts: ISearchOptions = _.extend({
+      fuzzy: false,
+    }, options || {} as ISearchOptions, {
+      excludeNovels: true,
+      limit: 30,
+      page: 1,
+    });
     return this.querySearchCache(title)
       .then((result) => {
         return {
           hasNextPage: false,
           hasPreviousPage: false,
-          options: (options),
+          options: (opts),
           page: 1,
           results: [result.value],
         } as ISearchResults;
       });
+  }
+
+  public async find(title: string): Promise<ISource> {
+    return this.querySearchCache(title).then((result) => result.value as ISource);
   }
 
   public async details(source: ISource): Promise<IDetails> {

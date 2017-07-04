@@ -11,6 +11,7 @@ import {
   IChapter,
   ICover,
   IDetails,
+  ISearchOptions,
   ISearchResults,
   ISource,
   ProviderType,
@@ -19,9 +20,9 @@ import {
 } from "../models";
 
 import { ICacheScoredResult } from "../cache";
-import { ISourceProvider, ProviderCore } from "../provider";
 import { stringEnum } from "../StringEnum";
 import { ValueMapper } from "../ValueMapper";
+import { ISourceProvider, ProviderCore } from "./provider";
 
 const TypeMap: ValueMapper<Type> = new ValueMapper<Type>({
   Manga: Type.Manga,
@@ -89,17 +90,59 @@ export class KissManga extends ProviderCore implements ISourceProvider {
     this.urlDecrypter.clearCache();
   }
 
-  public async search(title: string, options?: any): Promise<ISearchResults> {
-    return this.querySearchCache(title)
-      .then((result) => {
+  public async search(title: string, options?: ISearchOptions): Promise<ISearchResults> {
+    const opts: ISearchOptions = _.extend({
+      excludeNovels: false,
+      fuzzy: false,
+    }, options || {} as ISearchOptions, {
+      limit: Infinity,
+      page: 1,
+    });
+    const queryUrl = new URL("/AdvanceSearch", this.baseURL);
+    const dataMap: { [key: string]: any } = {
+      authorArtist: "",
+      genres: 0,
+      mangaName: (title),
+      status: "",
+    };
+    const data: string = Object.keys(dataMap)
+      .map((key: string) => {
+        return [key, dataMap[key]]
+          .map(encodeURIComponent)
+          .join("=").replace(/undefined$/, "");
+      }).join("&");
+    return this.cloudkicker.post(queryUrl, data, { Referer: queryUrl.href })
+      .then(({response}) => {
+        const $ = cheerio.load(response.body);
+        const selector = [
+          "#leftside", "div", "div.barContent", "div:nth-child(2)",
+          "table", "tbody", "tr", "td:nth-child(1)", "a",
+        ].join(" > ");
+        const nodes = $(selector);
+        const results = nodes.toArray().map((node) => {
+          const element = $(node);
+          const name = element.text().trim();
+          const value = element.attr("href").trim();
+          const location = new URL(value, this.baseURL);
+          const result = {
+            name: (name),
+            source: (location),
+          };
+          this.searchCache.update(name, result);
+          return result;
+        });
         return {
           hasNextPage: false,
           hasPreviousPage: false,
-          options: (options),
+          options: (opts),
           page: 1,
-          results: [result.value],
+          results: (results),
         } as ISearchResults;
       });
+  }
+
+  public async find(title: string): Promise<ISource> {
+    return this.querySearchCache(title).then((result) => result.value as ISource);
   }
 
   public async details(source: ISource): Promise<IDetails> {
@@ -238,43 +281,12 @@ export class KissManga extends ProviderCore implements ISourceProvider {
     }
     const query: boolean = this.searchCache.isEmpty || result.score < 0.9;
     if (query) {
-      const queryUrl = new URL("/AdvanceSearch", this.baseURL);
-      const dataMap: { [key: string]: any } = {
-        authorArtist: "",
-        genres: 0,
-        mangaName: (title),
-        status: "",
-      };
-      const data: string = Object.keys(dataMap)
-        .map((key: string) => {
-          return [key, dataMap[key]]
-            .map(encodeURIComponent)
-            .join("=").replace(/undefined$/, "");
-        }).join("&");
-      return this.cloudkicker.post(queryUrl, data, { Referer: queryUrl.href })
-        .then(({response}) => {
-          const $ = cheerio.load(response.body);
-          const selector = [
-            "#leftside", "div", "div.barContent", "div:nth-child(2)",
-            "table", "tbody", "tr", "td:nth-child(1)", "a",
-          ].join(" > ");
-          const nodes = $(selector);
-          return nodes.toArray().reduce((cache, node) => {
-            const element = $(node);
-            const name = element.text().trim();
-            const value = element.attr("href").trim();
-            const location = new URL(value, this.baseURL);
-            return cache.update(name, {
-              name: (name),
-              source: (location),
-            });
-          }, this.searchCache);
-        }).then((cache) => {
-          result = cache.bestMatch(title);
-          if (result.score >= 0.9) {
-            return result;
-          } else { throw new Error(`Title not found. Closest match: ${result.key}@${result.score}`); }
-        });
+      return this.search(title).then(() => {
+        result = this.searchCache.bestMatch(title);
+        if (result.score >= 0.9) {
+          return result;
+        } else { throw new Error(`Title not found. Closest match: ${result.key}@${result.score}`); }
+      });
     } else { return Promise.resolve(result); }
   }
 }

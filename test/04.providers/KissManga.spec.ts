@@ -28,16 +28,14 @@ describe("KissManga Tests", function() {
   utils.providerBadSourceHostTests(kissmanga);
 
   const generateTests = (local: boolean = true) => {
-    it("should return search result for 'One Punch-Man'", () => {
+    it("should return find result for 'One Punch-Man'", () => {
       if (local) {
         const post = sandbox.stub(cloudkicker, "post");
         post.withArgs(sinon.match({ href: "http://kissmanga.com/AdvanceSearch" }))
           .resolves({ response: { body: utils.getFixture("KissManga/Search_Manga_One_Punch-Man.html") } });
       }
-      return kissmanga.search("One Punch-Man")
-        .then(({results}) => {
-          expect(results).to.be.ok;
-          const result = results[0];
+      return kissmanga.find("One Punch-Man")
+        .then((result) => {
           expect(result.name).to.be.ok;
           expect(result.name).to.be.equal("Onepunch-Man");
           expect(result.source).to.be.ok;
@@ -45,15 +43,14 @@ describe("KissManga Tests", function() {
         });
     });
 
-    it("should return search result for 'One Punch-Man (ONE)'", () => {
+    it("should return find result for 'One Punch-Man (ONE)'", () => {
       if (local) {
         const post = sandbox.stub(cloudkicker, "post");
         post.withArgs(sinon.match({ href: "http://kissmanga.com/AdvanceSearch" }))
           .resolves({ response: { body: utils.getFixture("KissManga/Search_Manga_One_Punch-Man.html") } });
       }
-      return kissmanga.search("One Punch-Man (ONE)")
-        .then(({results}) => {
-          const result = results[0];
+      return kissmanga.find("One Punch-Man (ONE)")
+        .then((result) => {
           expect(result.name).to.be.ok;
           expect(result.name).to.be.equal("Onepunch-Man (ONE)");
           expect(result.source).to.be.ok;
@@ -61,13 +58,13 @@ describe("KissManga Tests", function() {
         });
     });
 
-    it("should fail search result for 'Blah Blah'", () => {
+    it("should fail find result for 'Blah Blah'", () => {
       if (local) {
         const post = sandbox.stub(cloudkicker, "post");
         post.withArgs(sinon.match({ href: "http://kissmanga.com/AdvanceSearch" }))
           .resolves({ response: { body: utils.getFixture("KissManga/Search_Manga_Blah_Blah.html") } });
       }
-      return kissmanga.search("Blah Blah")
+      return kissmanga.find("Blah Blah")
         .then(utils.unexpectedPromise)
         .catch((error: Error) => {
           expect(error).to.be.ok;
