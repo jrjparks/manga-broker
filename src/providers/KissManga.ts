@@ -94,7 +94,7 @@ export class KissManga extends ProviderCore implements ISourceProvider {
     const opts: ISearchOptions = _.extend({
       excludeNovels: false,
       fuzzy: false,
-    }, options || {} as ISearchOptions, {
+    }, options, {
       limit: Infinity,
       page: 1,
     });
@@ -184,13 +184,16 @@ export class KissManga extends ProviderCore implements ISourceProvider {
           const description = detailsNode.find("p:nth-child(7)").text().trim();
 
           const coverNode = $("#rightside > div:nth-child(1) > div.barContent > div:nth-child(2) > img");
-          const coverLocation = new URL(coverNode.attr("src"));
-          const covers: ICover[] = coverNode ? [{
-            MIME: "image/jpeg",
-            Thumbnail: (coverLocation),
-            side: CoverSide.Front,
-            volume: 1,
-          }] : [];
+          const covers: ICover[] = [];
+          if (coverNode.length === 1) {
+            const coverLocation = new URL(coverNode.attr("src"));
+            covers.push({
+              MIME: "image/jpeg",
+              Thumbnail: (coverLocation),
+              side: CoverSide.Front,
+              volume: 1,
+            });
+          }
 
           return {
             about: {

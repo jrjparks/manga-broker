@@ -1,6 +1,6 @@
 export class ValueMapper<V> {
-  protected keys: string[] = new Array<string>();
-  protected values: V[] = new Array<V>();
+  protected internalKeys: string[] = new Array<string>();
+  protected internalValues: V[] = new Array<V>();
 
   constructor(initial?: { [key: string]: V }) {
     if (initial) {
@@ -12,49 +12,57 @@ export class ValueMapper<V> {
 
   /** Add a key-value pair to the Dictionary */
   public add(key: string, value: V): this {
-    const index = this.keys.indexOf(key, 0);
+    const index = this.internalKeys.indexOf(key, 0);
     if (index >= 0) {
-      this.values[index] = value;
+      this.internalValues[index] = value;
     } else {
-      this.keys.push(key);
-      this.values.push(value);
+      this.internalKeys.push(key);
+      this.internalValues.push(value);
     }
     return this;
   }
 
   /** Remove a key-value pair from the Dictionary */
-  public remove(...keys: string[]): this {
-    for (const key of keys) {
-      const index = this.keys.indexOf(key, 0);
+  public remove(...internalKeys: string[]): this {
+    for (const key of internalKeys) {
+      const index = this.internalKeys.indexOf(key, 0);
       if (index >= 0) {
-        this.keys.splice(index, 1);
-        this.values.splice(index, 1);
+        this.internalKeys.splice(index, 1);
+        this.internalValues.splice(index, 1);
       }
     }
     return this;
   }
 
   public toKey(value: V): string | undefined {
-    const index = this.values.indexOf(value, 0);
-    return this.keys[index];
+    const index = this.internalValues.indexOf(value, 0);
+    return this.internalKeys[index];
   }
 
   public toValue(key: string): V | undefined;
   public toValue(key: string, def: V): V;
   public toValue(key: string, def?: V): V | undefined {
-    const index = this.keys.indexOf(key, 0);
-    return index >= 0 ? this.values[index] : def;
+    const index = this.internalKeys.indexOf(key, 0);
+    return index >= 0 ? this.internalValues[index] : def;
+  }
+
+  public get keys(): string[] {
+    return [...this.internalKeys];
   }
 
   /** Test if Dictionary contains key */
   public containsKey(key: string): boolean {
-    const index = this.keys.indexOf(key, 0);
+    const index = this.internalKeys.indexOf(key, 0);
     return Boolean(index >= 0);
+  }
+
+  public get values(): V[] {
+    return [...this.internalValues];
   }
 
   /** Test if Dictionary contains value */
   public containsValue(value: V): boolean {
-    const index = this.values.indexOf(value, 0);
+    const index = this.internalValues.indexOf(value, 0);
     return Boolean(index >= 0);
   }
 }

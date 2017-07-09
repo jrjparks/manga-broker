@@ -144,7 +144,7 @@ export class NovelUpdates extends ProviderCore implements IAuthentableProvider {
       fuzzy: false,
       limit: 10,
       page: 1,
-    }, options || {} as ISearchOptions, {
+    }, options, {
       excludeNovels: false,
     });
     const queryUrl = new URL(`/page/${opts.page}/`, this.baseURL);
@@ -228,7 +228,7 @@ export class NovelUpdates extends ProviderCore implements IAuthentableProvider {
 
           const coverNode: Cheerio = $("div.seriesimg > img");
           const covers: ICover[] = [];
-          if (coverNode) {
+          if (coverNode.length === 1) {
             covers.push({
               MIME: "image/jpeg",
               Normal: new URL(coverNode.attr("src").trim()),

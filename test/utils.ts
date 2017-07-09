@@ -88,6 +88,11 @@ export function providerNotAuthTests(provider: IProvider & IAuthentableProvider,
         .then(unexpectedPromise)
         .catch(notAuthErrorCatch);
     });
+    it(`find should fail for no auth.`, () => {
+      return provider.find("test")
+        .then(unexpectedPromise)
+        .catch(notAuthErrorCatch);
+    });
     it(`details should fail for no auth.`, () => {
       return provider.details(source)
         .then(unexpectedPromise)

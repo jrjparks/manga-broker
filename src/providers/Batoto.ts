@@ -19,6 +19,7 @@ import {
 
 import { ICacheScoredResult } from "../cache";
 import { ValueMapper } from "../ValueMapper";
+import { ProviderErrors } from "./errors";
 import { IAuthentableProvider, ISourceProvider, ProviderCore } from "./provider";
 
 const GenreMap: ValueMapper<Genre> = new ValueMapper<Genre>({
@@ -102,7 +103,7 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
       this.authenticated = false;
       const authRequest = await this.cloudkicker.post(authURL, authData, { Referer: this.baseURL });
       if (/username or password incorrect/i.test(authRequest.response.body.toString())) {
-        throw new Error("Your username or password was incorrect.");
+        throw ProviderErrors.AUTHENTICATION_INCORRECT;
       }
       return await this.cloudkicker.get(new URL("/forums", this.baseURL), { Referer: this.baseURL })
         .then(({response}) => {
@@ -119,7 +120,7 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
             return status && test;
           }, true)
             && usernameMatch.test(body);
-          if (!this.authenticated) { throw new Error("Unable to authenticate."); }
+          if (!this.authenticated) { throw ProviderErrors.UNABLE_TO_AUTHENTICATION; }
           const secKey: RegExpMatchArray = body.match(
             new RegExp("bato\\.to\\/forums\\/index\\.php\\?app\\=core.*?do\\=logout.*?k\\=(\\w+)"),
           ) as RegExpMatchArray;
@@ -150,14 +151,14 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
 
   public async search(title: string, options?: ISearchOptions): Promise<ISearchResults> {
     if (!this.isAuthenticated) {
-      throw new Error("Provider requires authentication.");
+      throw ProviderErrors.REQUIRES_AUTHENTICATION;
     } else {
       const opts: ISearchOptions = _.extend({
         excludeNovels: false,
         fuzzy: false,
         limit: 10,
         page: 1,
-      }, options || {} as ISearchOptions);
+      }, options);
       const queryUrl = new URL("/search", this.baseURL);
       queryUrl.searchParams.set("name", title);
       queryUrl.searchParams.set("name_cond", "c");
@@ -199,7 +200,7 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
 
   public async find(title: string): Promise<ISource> {
     if (!this.isAuthenticated) {
-      throw new Error("Provider requires authentication.");
+      throw ProviderErrors.REQUIRES_AUTHENTICATION;
     } else {
       return this.querySearchCache(title).then((result) => result.value as ISource);
     }
@@ -207,9 +208,9 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
 
   public async details(source: ISource): Promise<IDetails> {
     if (source.source.host !== this.baseURL.host) {
-      return Promise.reject(new Error("The passed source was not for this provider."));
+      return Promise.reject(ProviderErrors.INCORRECT_SOURCE);
     } else if (!this.isAuthenticated) {
-      throw new Error("Provider requires authentication.");
+      throw ProviderErrors.REQUIRES_AUTHENTICATION;
     } else {
       return this.cloudkicker.get(source.source, { Referer: source.source.href })
         .then(({response}) => {
@@ -250,13 +251,16 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
             "div:nth-child(1)", "div:nth-child(1)", "img",
           ].join(" > ");
           const coverNode = $(coverSelector);
-          const coverLocation = new URL(coverNode.attr("src"));
-          const covers: ICover[] = coverNode ? [{
-            MIME: "image/jpeg",
-            Thumbnail: (coverLocation),
-            side: CoverSide.Front,
-            volume: 1,
-          }] : [];
+          const covers: ICover[] = [];
+          if (coverNode.length === 1) {
+            const coverLocation = new URL(coverNode.attr("src"));
+            covers.push({
+              MIME: "image/jpeg",
+              Thumbnail: (coverLocation),
+              side: CoverSide.Front,
+              volume: 1,
+            });
+          }
 
           const statusText: string = detailsNode
             .find("tr:nth-child(6) > td:nth-child(2)").text().trim();
@@ -299,9 +303,9 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
 
   public async chapters(source: ISource): Promise<IChapter[]> {
     if (source.source.host !== this.baseURL.host) {
-      return Promise.reject(new Error("The passed source was not for this provider."));
+      return Promise.reject(ProviderErrors.INCORRECT_SOURCE);
     } else if (!this.isAuthenticated) {
-      throw new Error("Provider requires authentication.");
+      throw ProviderErrors.REQUIRES_AUTHENTICATION;
     } else {
       return this.cloudkicker.get(source.source, { Referer: source.source.href })
         .then(({response}) => {
@@ -341,11 +345,11 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
 
   public async pages(source: ISource): Promise<ISource[]> {
     if (source.source.host !== this.baseURL.host) {
-      return Promise.reject(new Error("The passed source was not for this provider."));
+      return Promise.reject(ProviderErrors.INCORRECT_SOURCE);
     } else if (!source.source.hash) {
       throw new Error("The passed source is in an incorrect format.");
     } else if (!this.isAuthenticated) {
-      throw new Error("Provider requires authentication.");
+      throw ProviderErrors.REQUIRES_AUTHENTICATION;
     } else {
       const pages: ISource[] = [];
       const hashId = source.source.hash.replace(/.*#/, "");
@@ -410,7 +414,7 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
         result = this.searchCache.bestMatch(title);
         if (result.score >= 0.9) {
           return result;
-        } else { throw new Error(`Title not found. Closest match: ${result.key}@${result.score}`); }
+        } else { throw ProviderErrors.CACHE_RESULT_NOT_FOUND(result); }
       });
     } else { return Promise.resolve(result); }
   }

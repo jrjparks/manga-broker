@@ -4,7 +4,9 @@ import { expect } from "chai";
 import { CloudKicker } from "cloudkicker";
 import * as sinon from "sinon";
 import { URL } from "url";
-import { KissMangaUrlDecrypter } from "../../src/providers/KissManga";
+import {
+  KissMangaUrlDecrypter,
+} from "../../src/providers/KissManga";
 import * as utils from "../utils";
 
 describe("KissMangaUrlDecrypter Tests", function() {

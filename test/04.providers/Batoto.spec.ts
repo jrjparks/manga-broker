@@ -12,7 +12,7 @@ import * as utils from "../utils";
 
 describe("Batoto Tests", () => {
   const cloudkicker: CloudKicker = new CloudKicker();
-  const batoto = new Batoto(cloudkicker);
+  const provider = new Batoto(cloudkicker);
   let sandbox: sinon.SinonSandbox;
   let clock: sinon.SinonFakeTimers;
 
@@ -38,7 +38,7 @@ describe("Batoto Tests", () => {
       "pass_hash=645bfe6d81fb60813f5b6dd110d55547",
       "session_id=27bb29744fbaca423a069fdf1150e7f6",
     ].map(request.cookie).forEach((cookie: request.Cookie) =>
-      cloudkicker.cookieJar.setCookie(cookie, batoto.baseURL));
+      cloudkicker.cookieJar.setCookie(cookie, provider.baseURL));
   };
 
   beforeEach("set-up", () => {
@@ -46,26 +46,26 @@ describe("Batoto Tests", () => {
     clock = sinon.useFakeTimers();
   });
   afterEach("tear-down", () => {
-    batoto.deauthenticate();
+    provider.deauthenticate();
     cloudkicker.clearCookieJar();
     sandbox.restore();
     clock.restore();
   });
 
   it("should return is", (done) => {
-    expect(batoto.is).to.be.equal("Batoto");
+    expect(provider.is).to.be.equal("Batoto");
     done();
   });
 
-  utils.providerBadSourceHostTests(batoto);
-  utils.providerNotAuthTests(batoto, "https://bato.to/#bad");
+  utils.providerBadSourceHostTests(provider);
+  utils.providerNotAuthTests(provider, "https://bato.to/#bad");
 
   it(`pages should fail for no auth.`, () => {
     const source: ISource = {
       name: "Bad Page Source",
       source: new URL("https://bato.to/"),
     };
-    return batoto.pages(source)
+    return provider.pages(source)
       .then(utils.unexpectedPromise)
       .catch((error: Error) => {
         expect(error).to.be.ok;
@@ -89,10 +89,10 @@ describe("Batoto Tests", () => {
           href: "https://bato.to/forums/index.php?app=core&do=process&module=global&section=login",
         })).resolves(noauthResponse);
       }
-      return batoto.authenticate("", "")
+      return provider.authenticate("", "")
         .then(utils.unexpectedPromise)
         .catch((error) => {
-          expect(batoto.isAuthenticated).to.be.equal(false);
+          expect(provider.isAuthenticated).to.be.equal(false);
           expect(error).to.be.ok;
           expect(error.message).to.be.equal("username is not supplied");
         });
@@ -108,10 +108,10 @@ describe("Batoto Tests", () => {
           href: "https://bato.to/forums/index.php?app=core&do=process&module=global&section=login",
         })).resolves(noauthResponse);
       }
-      return batoto.authenticate(username, "")
+      return provider.authenticate(username, "")
         .then(utils.unexpectedPromise)
         .catch((error) => {
-          expect(batoto.isAuthenticated).to.be.equal(false);
+          expect(provider.isAuthenticated).to.be.equal(false);
           expect(error).to.be.ok;
           expect(error.message).to.be.equal("password is not supplied");
         });
@@ -123,10 +123,10 @@ describe("Batoto Tests", () => {
         const post = sandbox.stub(cloudkicker, "post");
         handleAuth(get, post);
       }
-      return batoto.authenticate(username, password)
+      return provider.authenticate(username, password)
         .then(() => {
-          expect(batoto.isAuthenticated).to.be.equal(true);
-          const cookies: string = cloudkicker.cookieJar.getCookieString(batoto.baseURL);
+          expect(provider.isAuthenticated).to.be.equal(true);
+          const cookies: string = cloudkicker.cookieJar.getCookieString(provider.baseURL);
           expect(cookies).to.match(/ipsconnect\w+?/);
           expect(cookies).to.match(/member_id=\d+?/);
           expect(cookies).to.match(/pass_hash=\w+?/);
@@ -165,8 +165,8 @@ describe("Batoto Tests", () => {
           get.withArgs(sinon.match({ href: (source.source.href) }))
             .resolves({ response: { body: utils.getFixture(fixture) } });
         }
-        return batoto.authenticate(username, password).then(() => {
-          return batoto.find(name).then((result) => {
+        return provider.authenticate(username, password).then(() => {
+          return provider.find(name).then((result) => {
             expect(result.name).to.be.ok;
             expect(result.name).to.be.equal(name);
             expect(result.source).to.be.ok;
@@ -191,8 +191,8 @@ describe("Batoto Tests", () => {
           get.withArgs(sinon.match({ href: (source.source.href) }))
             .rejects(new Error("This should have hit the local cache."));
         }
-        return batoto.authenticate(username, password).then(() =>
-          batoto.find(name).then((result) => {
+        return provider.authenticate(username, password).then(() =>
+          provider.find(name).then((result) => {
             expect(result.name).to.be.ok;
             expect(result.name).to.be.equal(name);
             expect(result.source).to.be.ok;
@@ -225,8 +225,8 @@ describe("Batoto Tests", () => {
           get.withArgs(sinon.match({ href: (source.source.href) }))
             .resolves({ response: { body: utils.getFixture(fixture) } });
         }
-        return batoto.authenticate(username, password).then(() =>
-          batoto.details(source).then((details) => {
+        return provider.authenticate(username, password).then(() =>
+          provider.details(source).then((details) => {
             expect(details).to.be.ok;
             // Name
             expect(details.name).to.be.ok;
@@ -265,8 +265,8 @@ describe("Batoto Tests", () => {
           get.withArgs(sinon.match({ href: (source.source.href) }))
             .resolves({ response: { body: utils.getFixture(fixture) } });
         }
-        return batoto.authenticate(username, password).then(() =>
-          batoto.chapters(source).then((chapters) => {
+        return provider.authenticate(username, password).then(() =>
+          provider.chapters(source).then((chapters) => {
             expect(chapters).to.be.ok;
             expect(chapters).to.be.length.above(0);
             const chapter = chapters[0];
@@ -304,8 +304,8 @@ describe("Batoto Tests", () => {
           name: (name),
           source: new URL(`https://bato.to/reader#${id}`),
         };
-        return batoto.authenticate(username, password).then(() =>
-          batoto.pages(source).then((pages) => {
+        return provider.authenticate(username, password).then(() =>
+          provider.pages(source).then((pages) => {
             expect(pages).to.be.ok;
             expect(pages).to.be.length.above(0);
             expect(pages).to.be.lengthOf(pageSize);
@@ -331,7 +331,7 @@ describe("Batoto Tests", () => {
       this.retries(3);
       before(() => {
         cloudkicker.clearCookieJar();
-        batoto.clearCache();
+        provider.clearCache();
       });
       generateTests(false);
     }

@@ -19,6 +19,28 @@ describe("ValueMapper Tests", () => {
     done();
   });
 
+  it("should test ValueMapper.keys", (done) => {
+    const mapper: ValueMapper<any> = new ValueMapper<any>({
+      A: 0,
+    });
+    expect(mapper).to.be.ok;
+    mapper.add("A", 0).add("B", 1);
+    expect(mapper.keys).to.be.ok;
+    expect(mapper.keys).to.have.members(["A", "B"]);
+    done();
+  });
+
+  it("should test ValueMapper.values", (done) => {
+    const mapper: ValueMapper<any> = new ValueMapper<any>({
+      A: 0,
+    });
+    expect(mapper).to.be.ok;
+    mapper.add("A", 0).add("B", 1);
+    expect(mapper.values).to.be.ok;
+    expect(mapper.values).to.have.members([0, 1]);
+    done();
+  });
+
   it("should test ValueMapper.add", (done) => {
     const mapper: ValueMapper<any> = new ValueMapper<any>({
       A: 0,

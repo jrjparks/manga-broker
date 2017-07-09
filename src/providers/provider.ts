@@ -36,6 +36,7 @@ export interface INovelProvider extends IProvider {
 }
 
 export interface IAuthentableProvider extends IProvider {
+  isAuthenticated: boolean;
   authenticate(username: string, password: string): Promise<this>;
   deauthenticate(): Promise<this>;
 }

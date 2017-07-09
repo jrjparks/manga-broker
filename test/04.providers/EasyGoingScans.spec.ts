@@ -5,7 +5,9 @@ import { CloudKicker } from "cloudkicker";
 import * as sinon from "sinon";
 import { URL } from "url";
 import { ISource } from "../../src/models/source";
-import { EasyGoingScans } from "../../src/providers/EasyGoingScans";
+import {
+  EasyGoingScans,
+} from "../../src/providers/EasyGoingScans";
 import * as utils from "../utils";
 
 describe("EasyGoingScans Tests", function() {

@@ -9,7 +9,9 @@ import {
   Genre,
   ISource,
 } from "../../src/models";
-import { NovelUpdates } from "../../src/providers/NovelUpdates";
+import {
+  NovelUpdates,
+} from "../../src/providers/NovelUpdates";
 import * as utils from "../utils";
 
 describe("NovelUpdates Tests", function() {

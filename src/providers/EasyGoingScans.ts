@@ -13,6 +13,7 @@ import {
 } from "../models";
 
 import { ICacheScoredResult, ScoredCache } from "../cache";
+import { ProviderErrors } from "./errors";
 import { ISourceProvider, ProviderCore } from "./provider";
 
 export class EasyGoingScans extends ProviderCore implements ISourceProvider {
@@ -23,7 +24,7 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
   public async search(title: string, options?: ISearchOptions): Promise<ISearchResults> {
     const opts: ISearchOptions = _.extend({
       fuzzy: false,
-    }, options || {} as ISearchOptions, {
+    }, options, {
       excludeNovels: true,
       limit: 30,
       page: 1,
@@ -46,13 +47,13 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
 
   public async details(source: ISource): Promise<IDetails> {
     if (source.source.host !== this.baseURL.host) {
-      return Promise.reject(new Error("The passed source was not for this provider."));
-    } else { return Promise.reject(new Error("This function is not supported by this provider.")); }
+      return Promise.reject(ProviderErrors.INCORRECT_SOURCE);
+    } else { return Promise.reject(ProviderErrors.FUNCTION_NOT_SUPPORTED); }
   }
 
   public async chapters(source: ISource): Promise<IChapter[]> {
     if (source.source.host !== this.baseURL.host) {
-      return Promise.reject(new Error("The passed source was not for this provider."));
+      return Promise.reject(ProviderErrors.INCORRECT_SOURCE);
     } else {
       return this.cloudkicker.get(source.source, { Referer: source.source.href })
         .then(({response}) => {
@@ -83,7 +84,7 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
 
   public async pages(source: ISource): Promise<ISource[]> {
     if (source.source.host !== this.baseURL.host) {
-      return Promise.reject(new Error("The passed source was not for this provider."));
+      return Promise.reject(ProviderErrors.INCORRECT_SOURCE);
     } else {
       source.source.searchParams.set("display", "webtoon");
       return this.cloudkicker.get(source.source, { Referer: source.source.href })
@@ -141,11 +142,11 @@ export class EasyGoingScans extends ProviderCore implements ISourceProvider {
 
   protected async querySearchCache(title: string): Promise<ICacheScoredResult<ISource>> {
     return this.getSearchCache()
-      .then((cache) => new Promise<ICacheScoredResult<ISource>>((resolve, reject) => {
+      .then((cache) => {
         const result = cache.bestMatch(title);
         if (result.score >= 0.9) {
-          return resolve(result);
-        } else { return reject(new Error(`Title not found. Closest match: ${result.key}@${result.score}`)); }
-      }));
+          return result;
+        } else { throw ProviderErrors.CACHE_RESULT_NOT_FOUND(result); }
+      });
   }
 }

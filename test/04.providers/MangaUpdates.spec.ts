@@ -7,7 +7,9 @@ import { URL } from "url";
 import { IDetails } from "../../src/models/details";
 import { Genre } from "../../src/models/genre";
 import { ISource } from "../../src/models/source";
-import { MangaUpdates } from "../../src/providers/MangaUpdates";
+import {
+  MangaUpdates,
+} from "../../src/providers/MangaUpdates";
 import * as utils from "../utils";
 
 describe("MangaUpdates Tests", function() {

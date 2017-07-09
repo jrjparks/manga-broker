@@ -72,7 +72,7 @@ export class MangaUpdates extends ProviderCore implements IProvider {
       fuzzy: false,
       limit: 100,
       page: 1,
-    }, options || {});
+    }, options);
     const searchParams: { [key: string]: any } = {
       page: opts.page,
       perpage: opts.limit,
@@ -172,12 +172,16 @@ export class MangaUpdates extends ProviderCore implements IProvider {
 
           // Cover
           const coverNode = contentNode.find("div:nth-child(4) > div > div:nth-child(2) > center > img");
-          const covers: ICover[] = coverNode.length === 1 ? [{
-            MIME: "image/jpeg",
-            Normal: new URL(coverNode.attr("src").trim()),
-            side: CoverSide.Front,
-            volume: 0,
-          }] : [];
+          const covers: ICover[] = [];
+          if (coverNode.length === 1) {
+            const coverLocation = new URL(coverNode.attr("src"));
+            covers.push({
+              MIME: "image/jpeg",
+              Thumbnail: (coverLocation),
+              side: CoverSide.Front,
+              volume: 1,
+            });
+          }
 
           // Related
           const relatedNodes = contentNode.find("div:nth-child(3) > div > div:nth-child(8) > a");

@@ -10,7 +10,9 @@ import { ICover } from "../../src/models/cover";
 import { ISource } from "../../src/models/source";
 import { Status } from "../../src/models/status";
 
-import { KissManga } from "../../src/providers/KissManga";
+import {
+  KissManga,
+} from "../../src/providers/KissManga";
 import * as utils from "../utils";
 
 describe("KissManga Tests", function() {

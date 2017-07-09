@@ -6,7 +6,9 @@ import { CloudKicker } from "cloudkicker";
 import * as sinon from "sinon";
 import { URL } from "url";
 import { ISource } from "../../src/models/source";
-import { MangaPanda } from "../../src/providers/MangaPanda";
+import {
+  MangaPanda,
+} from "../../src/providers/MangaPanda";
 import * as utils from "../utils";
 
 describe("MangaPanda Tests", function() {

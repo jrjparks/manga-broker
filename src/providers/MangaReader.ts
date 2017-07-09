@@ -71,7 +71,7 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
       excludeNovels: false,
       fuzzy: false,
       page: 1,
-    }, options || {} as ISearchOptions, {
+    }, options, {
       limit: 30,
     });
     const queryUrl: URL = new URL("/search/", this.baseURL);
@@ -80,7 +80,8 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
     queryUrl.searchParams.set("rd", "0");
     queryUrl.searchParams.set("status", "0");
     queryUrl.searchParams.set("order", "0");
-    queryUrl.searchParams.set("genre", "0000000000000000000000000000000000000");
+    const genre = GenreMap.values.reduce((str, g) => str += _.includes(opts.genres, g) ? "1" : "0", "");
+    queryUrl.searchParams.set("genre", genre);
     queryUrl.searchParams.set("p", p.toString());
     return this.cloudkicker.get(queryUrl, { Referer: queryUrl.href }).then(({response}) => {
       const $ = cheerio.load(response.body);
@@ -144,12 +145,12 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
             .map((genre: string) => GenreMap.toValue(genre, Genre.Unknown))
             .filter((genre: Genre) => genre !== Genre.Unknown);
 
-          const description = $("#readmangasum > p").text().trim();
+          const description: string = $("#readmangasum > p").text().trim();
 
           const coverNode = $("#mangaimg > img");
-          const coverLocation = new URL(coverNode.attr("src"));
+          const coverLocation: URL = new URL(coverNode.attr("src"));
           const covers: ICover[] = [];
-          if (coverNode) {
+          if (coverNode.length === 1) {
             covers.push({
               MIME: "image/jpeg",
               Thumbnail: (coverLocation),
