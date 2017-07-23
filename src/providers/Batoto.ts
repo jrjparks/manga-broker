@@ -351,55 +351,31 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
     } else if (!this.isAuthenticated) {
       throw ProviderErrors.REQUIRES_AUTHENTICATION;
     } else {
-      const pages: ISource[] = [];
       const hashId = source.source.hash.replace(/.*#/, "");
-      const getReaderURL =
-        (id: string, page: number): URL => new URL(`/areader?id=${id}&p=${page}&supress_webtoon=t`, this.baseURL);
+      const getReaderURL = (id: string, page: number): URL =>
+        new URL(`/areader?id=${id}&p=${page}&supress_webtoon=t`, this.baseURL);
       const URL2ISource = (url: URL): ISource => {
         return {
           name: path.basename(url.pathname),
           source: url,
         };
       };
-      const pageRegExp: RegExp = /http:\/\/bato\.to\/reader#\w+_\d+/g;
-      const getPageURLs = (body: any): URL[] => {
-        if (!_.isString(body)) { body = body.toString(); }
-        return [...new Set(body.match(pageRegExp) as RegExpMatchArray)].map((match) => {
-          const data = match.replace(/.*#/, "").split("_");
-          const id = data[0];
-          const page = parseInt(data[1], 10) || 1;
-          return getReaderURL(id, page);
-        });
-      };
-      const imgRegExp: RegExp = /http:\/\/img\.bato\.to\/comics\/[\w\/]*?\/img\d+\.\w{3,4}/g;
-      const getImgURLs = (body: any): URL[] => {
-        if (!_.isString(body)) { body = body.toString(); }
-        return [...new Set(body.match(imgRegExp) as RegExpMatchArray)]
-          .map((match) => new URL(match));
-      };
-
       const firstAReaderURL = getReaderURL(hashId, 1);
       return this.cloudkicker.get(firstAReaderURL, {
         "Referer": source.source.href,
         "X-Requested-With": "XMLHttpRequest",
       }).then(({response}) => {
-        const body = response.body.toString();
-        const pageLocations: URL[] = getPageURLs(body);
-        const minimumPageLocations: URL[] = pageLocations
-          .filter((location, index) => location && index % 2 === 0).slice(1);
+        const body: string = response.body.toString();
 
-        pages.push(...getImgURLs(body).map(URL2ISource));
-        return minimumPageLocations.reduce((chain, pageLocation) => {
-          return chain.then(() => {
-            return this.cloudkicker.get(pageLocation, {
-              "Referer": source.source.href,
-              "X-Requested-With": "XMLHttpRequest",
-            }).then((cfResponse) => {
-              pages.push(...getImgURLs(cfResponse.response.body).map(URL2ISource));
-            });
-          });
-        }, Promise.resolve());
-      }).then(() => pages);
+        const pageRegExp: RegExp = /http:\/\/bato\.to\/reader#\w+_\d+/g;
+        const pageCount: number = new Set(body.match(pageRegExp) as RegExpMatchArray).size;
+        const imageBaseRegex: RegExp = /http:\/\/img\.bato\.to\/comics\/[\w\/]*?\/read\w+\//;
+        const imageBase: string = (body.match(imageBaseRegex) as RegExpMatchArray)[0];
+        // This is generating the image url based on the image url in the initial page.
+        return _.range(1, pageCount + 1)
+          .map((page) => new URL(imageBase + `img${_.padStart(page.toString(), 6, "0")}.jpg`))
+          .map(URL2ISource);
+      });
     }
   }
 

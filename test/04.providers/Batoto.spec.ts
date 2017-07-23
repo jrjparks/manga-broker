@@ -309,10 +309,10 @@ describe("Batoto Tests", () => {
             expect(pages).to.be.ok;
             expect(pages).to.be.length.above(0);
             expect(pages).to.be.lengthOf(pageSize);
-            pages.forEach((page) => {
+            pages.forEach((page, index) => {
+              const expectedPageName = new RegExp(`^img${_.padStart((index + 1).toString(), 6, "0")}.jpg$`);
               expect(page.name).to.be.ok;
-              expect(page.name).to.match(/^img/);
-              expect(page.name).to.match(/\.\w{3,4}$/);
+              expect(page.name).to.match(expectedPageName);
             });
           }));
       });
