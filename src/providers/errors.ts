@@ -1,5 +1,6 @@
 import { ICacheScoredResult } from "../cache";
 export class ProviderErrors {
+  public static FUNCTION_NOT_IMPLEMENTED: Error = new Error("This function is not yet implemented by this provider.");
   public static FUNCTION_NOT_SUPPORTED: Error = new Error("This function is not supported by this provider.");
   public static INCORRECT_SOURCE: Error = new Error("The passed source was not for this provider.");
 

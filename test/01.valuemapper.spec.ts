@@ -6,6 +6,8 @@ describe("ValueMapper Tests", () => {
   it("should test ValueMapper()", (done) => {
     const mapper: ValueMapper<any> = new ValueMapper<any>();
     expect(mapper).to.be.ok;
+    expect(mapper.keys).to.be.empty;
+    expect(mapper.values).to.be.empty;
     done();
   });
 
@@ -14,26 +16,28 @@ describe("ValueMapper Tests", () => {
       A: 0,
     });
     expect(mapper).to.be.ok;
+    expect(mapper.keys).to.not.be.empty;
+    expect(mapper.values).to.not.be.empty;
     expect(mapper.containsKey("A")).to.be.ok;
     expect(mapper.containsValue(0)).to.be.ok;
     done();
   });
 
   it("should test ValueMapper.keys", (done) => {
-    const mapper: ValueMapper<any> = new ValueMapper<any>({
-      A: 0,
-    });
+    const mapper: ValueMapper<any> = new ValueMapper<any>();
     expect(mapper).to.be.ok;
+    expect(mapper.keys).to.be.empty;
+    expect(mapper.values).to.be.empty;
     mapper.add("A", 0).add("B", 1);
-    expect(mapper.keys).to.be.ok;
+    expect(mapper.keys).to.not.be.empty;
+    expect(mapper.values).to.not.be.empty;
     expect(mapper.keys).to.have.members(["A", "B"]);
+    expect(mapper.toValue("A")).to.equal(0);
     done();
   });
 
   it("should test ValueMapper.values", (done) => {
-    const mapper: ValueMapper<any> = new ValueMapper<any>({
-      A: 0,
-    });
+    const mapper: ValueMapper<any> = new ValueMapper<any>();
     expect(mapper).to.be.ok;
     mapper.add("A", 0).add("B", 1);
     expect(mapper.values).to.be.ok;
@@ -42,9 +46,10 @@ describe("ValueMapper Tests", () => {
   });
 
   it("should test ValueMapper.add", (done) => {
-    const mapper: ValueMapper<any> = new ValueMapper<any>({
-      A: 0,
-    });
+    const mapper: ValueMapper<any> = new ValueMapper<any>();
+    expect(mapper).to.be.ok;
+    expect(mapper.keys).to.be.empty;
+    expect(mapper.values).to.be.empty;
     expect(mapper).to.be.ok;
     mapper.add("A", 0).add("B", 1);
     expect(mapper.containsKey("A")).to.be.ok;

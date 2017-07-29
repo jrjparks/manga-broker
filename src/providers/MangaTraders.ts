@@ -263,7 +263,7 @@ export class MangaTraders extends ProviderCore implements ISourceProvider, IAuth
     } else if (!this.isAuthenticated) {
       throw ProviderErrors.REQUIRES_AUTHENTICATION;
     } else {
-      return [];
+      throw ProviderErrors.FUNCTION_NOT_IMPLEMENTED;
     }
   }
 
@@ -273,7 +273,7 @@ export class MangaTraders extends ProviderCore implements ISourceProvider, IAuth
     } else if (!this.isAuthenticated) {
       throw ProviderErrors.REQUIRES_AUTHENTICATION;
     } else {
-      return [];
+      throw ProviderErrors.FUNCTION_NOT_IMPLEMENTED;
     }
   }
 
