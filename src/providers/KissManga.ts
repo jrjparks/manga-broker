@@ -1,6 +1,6 @@
-import _ = require("lodash");
 import cheerio = require("cheerio");
 import { CloudKicker } from "cloudkicker";
+import _ = require("lodash");
 import path = require("path");
 import { URL } from "url";
 import vm = require("vm");

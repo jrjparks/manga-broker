@@ -1,5 +1,5 @@
-import _ = require("lodash");
 import cheerio = require("cheerio");
+import _ = require("lodash");
 import path = require("path");
 import { URL } from "url";
 

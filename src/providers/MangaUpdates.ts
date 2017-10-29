@@ -1,5 +1,5 @@
-import _ = require("lodash");
 import cheerio = require("cheerio");
+import _ = require("lodash");
 import { URL } from "url";
 
 import { parseLinkFn } from "../util/cheerio";
