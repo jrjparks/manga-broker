@@ -103,45 +103,44 @@ export class MangaPark extends ProviderCore implements ISourceProvider {
       }).join(",");
       queryUrl.searchParams.set("genres", genres);
     }
-    return this.cloudkicker.get(queryUrl, { Referer: queryUrl.href })
-      .then(({response}) => {
-        const $ = cheerio.load(response.body);
-        const selector = [
-          "body", "section", "div", "div.manga-list", "div.item",
-        ].join(" > ");
-        const nodes = $(selector);
-        const results = nodes.toArray().map((node) => {
-          const element = $(node);
-          const nameElement = element.find("h2 > a");
-          const name = nameElement.text().trim();
-          const value = nameElement.attr("href").trim();
-          const location = new URL(value, this.baseURL);
-          location.protocol = this.baseURL.protocol;
-          const result = {
-            name: (name),
-            source: (location),
-          };
-          this.searchCache.update(name, result);
-          return result;
-        });
-        let page: number = opts.page as number;
-        const pagingBar = $("#paging-bar ul.paging > li:nth-child(3) > select");
-        if (pagingBar) {
-          let pageOption = pagingBar.find("option[selected]");
-          if (pageOption.length === 0) { pageOption = pagingBar.find("option").first(); }
-          page = parseInt(new URL(pageOption.val(), this.baseURL).searchParams.get("page") as string, 10);
-        } else { page = 1; }
+    const { response } = await this.cloudkicker.get(queryUrl, { Referer: queryUrl.href });
+    const $ = cheerio.load(response.body);
+    const selector = [
+      "body", "section", "div", "div.manga-list", "div.item",
+    ].join(" > ");
+    const nodes = $(selector);
+    const results = nodes.toArray().map((node) => {
+      const element = $(node);
+      const nameElement = element.find("h2 > a");
+      const name = nameElement.text().trim();
+      const value = nameElement.attr("href").trim();
+      const location = new URL(value, this.baseURL);
+      location.protocol = this.baseURL.protocol;
+      const result = {
+        name: (name),
+        source: (location),
+      };
+      this.searchCache.update(name, result);
+      return result;
+    });
+    let page: number = opts.page as number;
+    const pagingBar = $("#paging-bar ul.paging > li:nth-child(3) > select");
+    if (pagingBar) {
+      let pageOption = pagingBar.find("option[selected]");
+      if (pageOption.length === 0) { pageOption = pagingBar.find("option").first(); }
+      page = parseInt(new URL(pageOption.val(), this.baseURL).searchParams.get("page") as string, 10);
+    } else { page = 1; }
 
-        const hasNextPage = Boolean(pagingBar.find("#paging-bar > ul:nth-child(1) > li:nth-child(4) > a").length === 1);
-        const hasPreviousPage = Boolean(page > 1);
-        return {
-          hasNextPage: (hasNextPage),
-          hasPreviousPage: (hasPreviousPage),
-          options: (opts),
-          page: (page),
-          results: (results),
-        } as ISearchResults;
-      });
+    const hasNextPage = Boolean(pagingBar.find(["#paging-bar",
+      "ul:nth-child(1)", "li:nth-child(4)", "a"].join(" > ")).length === 1);
+    const hasPreviousPage = Boolean(page > 1);
+    return {
+      hasNextPage: (hasNextPage),
+      hasPreviousPage: (hasPreviousPage),
+      options: (opts),
+      page: (page),
+      results: (results),
+    } as ISearchResults;
   }
 
   public async find(title: string): Promise<ISource> {
@@ -152,83 +151,81 @@ export class MangaPark extends ProviderCore implements ISourceProvider {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(ProviderErrors.INCORRECT_SOURCE);
     } else {
-      return this.cloudkicker.get(source.source)
-        .then(({response}) => {
-          const $ = cheerio.load(response.body);
+      const { response } = await this.cloudkicker.get(source.source, { Referer: source.source.href });
+      const $ = cheerio.load(response.body);
 
-          const name: string = $("body > section > div > div:nth-child(1) > h1 > a")
-            .text().replace(/Manga$/, "").trim();
+      const name: string = $("body > section > div > div:nth-child(1) > h1 > a")
+        .text().replace(/Manga$/, "").trim();
 
-          const detailsNode = $("body > section > div > table > tbody > tr > td:nth-child(2) > table > tbody");
-          const associatedNames: ISource[] = detailsNode
-            .find("tr:nth-child(4) > td").text()
-            .split(";").map((associatedName) => {
-              return {
-                name: (associatedName.trim()),
-                source: (source.source),
-              } as ISource;
-            });
-
-          const description = detailsNode
-            .find("body > section > div > p.summary").text().trim();
-
-          const statusNode = detailsNode.find("tr:nth-child(9) > td");
-          const status: Status = StatusMap.toValue(statusNode.text().trim(), Status.Unknown);
-
-          const typeNode = detailsNode.find("tr:nth-child(8) > td");
-          const type: Type = TypeMap.toValue(typeNode.text().split("-")[0].trim(), Type.Unknown);
-
-          const authors: string[] = detailsNode.find("tr:nth-child(5) > td > a")
-            .toArray().map((node) => {
-              const element = $(node);
-              return element.text().trim();
-            });
-
-          const artists: string[] = detailsNode.find("tr:nth-child(6) > td > a")
-            .toArray().map((node) => {
-              const element = $(node);
-              return element.text().trim();
-            });
-
-          const genres: Genre[] = detailsNode.find("tr:nth-child(7) > td > a").toArray()
-            .map((genreNode: CheerioElement) => $(genreNode).attr("title").trim())
-            .map((genre: string) => GenreMap.toValue(genre, Genre.Unknown))
-            .filter((genre: Genre) => genre !== Genre.Unknown);
-
-          const coverSelector = [
-            "body", "section", "div", "table", "tbody", "tr", "td:nth-child(1)",
-            "div", "img",
-          ].join(" > ");
-          const coverNode = $(coverSelector);
-          const covers: ICover[] = [];
-          if (coverNode.length === 1) {
-            const coverLocation = new URL(coverNode.attr("src"));
-            covers.push({
-              MIME: "image/jpeg",
-              Thumbnail: (coverLocation),
-              side: CoverSide.Front,
-              volume: 1,
-            });
-          }
-
+      const detailsNode = $("body > section > div > table > tbody > tr > td:nth-child(2) > table > tbody");
+      const associatedNames: ISource[] = detailsNode
+        .find("tr:nth-child(4) > td").text()
+        .split(";").map((associatedName) => {
           return {
-            about: {
-              artists: (artists),
-              associatedNames: (associatedNames),
-              authors: (authors),
-              covers: (covers),
-              description: (description),
-              genres: (genres),
-            },
-            meta: {
-              isNovel: false,
-              status: (status),
-              type: (type),
-            },
-            name: (name),
+            name: (associatedName.trim()),
             source: (source.source),
-          } as IDetails;
+          } as ISource;
         });
+
+      const description = detailsNode
+        .find("body > section > div > p.summary").text().trim();
+
+      const statusNode = detailsNode.find("tr:nth-child(9) > td");
+      const status: Status = StatusMap.toValue(statusNode.text().trim(), Status.Unknown);
+
+      const typeNode = detailsNode.find("tr:nth-child(8) > td");
+      const type: Type = TypeMap.toValue(typeNode.text().split("-")[0].trim(), Type.Unknown);
+
+      const authors: string[] = detailsNode.find("tr:nth-child(5) > td > a")
+        .toArray().map((node) => {
+          const element = $(node);
+          return element.text().trim();
+        });
+
+      const artists: string[] = detailsNode.find("tr:nth-child(6) > td > a")
+        .toArray().map((node) => {
+          const element = $(node);
+          return element.text().trim();
+        });
+
+      const genres: Genre[] = detailsNode.find("tr:nth-child(7) > td > a").toArray()
+        .map((genreNode: CheerioElement) => $(genreNode).attr("title").trim())
+        .map((genre: string) => GenreMap.toValue(genre, Genre.Unknown))
+        .filter((genre: Genre) => genre !== Genre.Unknown);
+
+      const coverSelector = [
+        "body", "section", "div", "table", "tbody", "tr", "td:nth-child(1)",
+        "div", "img",
+      ].join(" > ");
+      const coverNode = $(coverSelector);
+      const covers: ICover[] = [];
+      if (coverNode.length === 1) {
+        const coverLocation = new URL(coverNode.attr("src"));
+        covers.push({
+          MIME: "image/jpeg",
+          Thumbnail: (coverLocation),
+          side: CoverSide.Front,
+          volume: 1,
+        });
+      }
+
+      return {
+        about: {
+          artists: (artists),
+          associatedNames: (associatedNames),
+          authors: (authors),
+          covers: (covers),
+          description: (description),
+          genres: (genres),
+        },
+        meta: {
+          isNovel: false,
+          status: (status),
+          type: (type),
+        },
+        name: (name),
+        source: (source.source),
+      } as IDetails;
     }
   }
 
