@@ -95,9 +95,9 @@ export class KissManga extends ProviderCore implements ISourceProvider {
       excludeNovels: false,
       fuzzy: false,
     }, options, {
-      limit: Infinity,
-      page: 1,
-    });
+        limit: Infinity,
+        page: 1,
+      });
     const queryUrl = new URL("/AdvanceSearch", this.baseURL);
     const dataMap: { [key: string]: any } = {
       authorArtist: "",
@@ -112,7 +112,7 @@ export class KissManga extends ProviderCore implements ISourceProvider {
           .join("=").replace(/undefined$/, "");
       }).join("&");
     return this.cloudkicker.post(queryUrl, data, { Referer: queryUrl.href })
-      .then(({response}) => {
+      .then(({ response }) => {
         const $ = cheerio.load(response.body);
         const selector = [
           "#leftside", "div", "div.barContent", "div:nth-child(2)",
@@ -150,7 +150,7 @@ export class KissManga extends ProviderCore implements ISourceProvider {
       return Promise.reject(new Error("The passed source was not for this provider."));
     } else {
       return this.cloudkicker.get(source.source, { Referer: source.source.href })
-        .then(({response}) => {
+        .then(({ response }) => {
           const $ = cheerio.load(response.body);
           const selector = [
             "#leftside", "div:nth-child(1)", "div.barContent", "div:nth-child(2)",
@@ -221,7 +221,7 @@ export class KissManga extends ProviderCore implements ISourceProvider {
       return Promise.reject(new Error("The passed source was not for this provider."));
     } else {
       return this.cloudkicker.get(source.source, { Referer: source.source.href })
-        .then(({response}) => {
+        .then(({ response }) => {
           const $ = cheerio.load(response.body);
           const selector = [
             "#leftside", "div:nth-child(4)", "div.barContent.chapterList",
@@ -253,7 +253,7 @@ export class KissManga extends ProviderCore implements ISourceProvider {
       return Promise.reject(new Error("The passed source was not for this provider."));
     } else {
       return this.cloudkicker.get(source.source, { Referer: source.source.href })
-        .then(({response}) => {
+        .then(({ response }) => {
           const encryptedUrlRegex: RegExp = /wrapKA\(\"([\w\/\+\=]+)\"\)/g;
           const encryptedUrls: string[] = [];
           let encryptedUrlMatch = encryptedUrlRegex.exec(response.body);
@@ -262,12 +262,14 @@ export class KissManga extends ProviderCore implements ISourceProvider {
             encryptedUrlMatch = encryptedUrlRegex.exec(response.body);
           }
           encryptedUrlMatch = null;
-          return this.urlDecrypter.getWrapKA(response.body)
+          return this.urlDecrypter.getWrapKA()
             .then((wrapKA) => Promise.all(encryptedUrls.map((encryptedUrl) => wrapKA(encryptedUrl))))
             .then((decryptedUrls) => decryptedUrls.map((decryptedUrl) => new URL(decryptedUrl)))
             .then((imageUrls) => imageUrls.map((imageUrl, index) => {
               const searchParams = imageUrl.searchParams;
-              const filename: string = searchParams.get("title") || searchParams.get("url") || `page_${index}.jpg`;
+              const filename: string = searchParams.get("title")
+                || searchParams.get("url")
+                || `page_${index}.jpg`;
               return {
                 name: (path.basename(filename)),
                 source: (imageUrl),
@@ -331,31 +333,22 @@ export class KissMangaUrlDecrypter {
     this.cryptoScript = undefined;
   }
 
-  public async getWrapKA(body: any): Promise<(hash: string) => Promise<string>> {
-    if (!_.isString(body)) { body = body.toString(); }
-    const decryptionKeyMatch: RegExpMatchArray = body.match(/\>\s*(.+CryptoJS.SHA256\(chko\))/);
-    if (!decryptionKeyMatch || decryptionKeyMatch.length < 2) {
-      return Promise.reject(new Error("Unable to locate decryption key."));
-    } else {
-      const decryptionKey = decryptionKeyMatch[1];
-      const cryptoScript = await this.loadScripts();
-      const decryptionKeyScript = new vm.Script(decryptionKey);
-      const decryptionKeySandbox = this.sandbox;
-      cryptoScript.runInContext(decryptionKeySandbox, this.vmOptions);
-      decryptionKeyScript.runInContext(decryptionKeySandbox, this.vmOptions);
-      const wrapKA = (hash: string): Promise<string> => {
-        return new Promise((resolve, reject) => {
-          try {
-            const decryptionKeyMap = (decryptionKeySandbox as { document: { [key: string]: string } }).document;
-            if (!(hash in decryptionKeyMap)) {
-              vm.runInContext(`calcHash("${hash}");`, decryptionKeySandbox, this.vmOptions);
-            }
-            return resolve(decryptionKeyMap[hash]);
-          } catch (error) { return reject(error); }
-        });
-      };
-      return wrapKA;
-    }
+  public async getWrapKA(): Promise<(hash: string) => Promise<string>> {
+    const cryptoScript = await this.loadScripts();
+    const decryptionKeySandbox = this.sandbox;
+    cryptoScript.runInContext(decryptionKeySandbox, this.vmOptions);
+    const wrapKA = (hash: string): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        try {
+          const decryptionKeyMap = (decryptionKeySandbox as { document: { [key: string]: string } }).document;
+          if (!(hash in decryptionKeyMap)) {
+            vm.runInContext(`calcHash("${hash}");`, decryptionKeySandbox, this.vmOptions);
+          }
+          return resolve(decryptionKeyMap[hash]);
+        } catch (error) { return reject(error); }
+      });
+    };
+    return wrapKA;
   }
 
   private async load(script: ScriptType) {
@@ -371,7 +364,7 @@ export class KissMangaUrlDecrypter {
         this.load(ScriptType.ca),
         this.load(ScriptType.lo),
       ]).then((results) => {
-        this.rawCryptoScript = results.map(({response}) => response.body.toString()).join(";");
+        this.rawCryptoScript = results.map(({ response }) => response.body.toString()).join(";");
         this.rawCryptoScript = [
           this.rawCryptoScript, "var document={}",
           "function calcHash(hash){if (!(hash in document)) {document[hash] = wrapKA(hash);}}",
