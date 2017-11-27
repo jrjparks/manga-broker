@@ -199,7 +199,7 @@ export class MangaReader extends ProviderCore implements ISourceProvider {
             const location = new URL(this.baseURL.href);
             location.pathname = value;
             const chapterMatch: RegExpMatchArray = (_.first(nameParts) as string).match(/\d+$/) as RegExpMatchArray;
-            const chapter = parseInt(chapterMatch[0], 10);
+            const chapter = parseFloat(chapterMatch[0]);
             chapters.push({
               chapter: (chapter),
               name: (name),
