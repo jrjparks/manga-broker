@@ -14,6 +14,26 @@
     "preversion": "npm test",
     "postversion": "git push && git push --tags"
   },
+  "nyc": {
+    "include": [
+      "src/**/*.ts",
+      "src/**/*.tsx"
+    ],
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "sourceMap": true,
+    "instrument": true,
+    "all": true
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jrjparks/manga-broker.git"
