@@ -324,17 +324,15 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
                 .map((str) => str.trim()).filter((str) => !!(str));
               const name: string = _.last(nameParts) as string;
               const location = new URL(sourceElement.attr("href"));
-              const chapterRegExp: RegExp = /(Vol\.(\d+)\s)?(Ch\.(\d+))(\.(\d+))?/;
+              const chapterRegExp: RegExp = /(Vol\.(\d+)\s)?Ch\.(\d+(\.\d+)?)/;
               const chapterMatch: RegExpMatchArray =
                 (_.first(nameParts) as string).match(chapterRegExp) as RegExpMatchArray;
               const volume = chapterMatch[2] ? parseInt(chapterMatch[2], 10) : undefined;
-              const chapter = chapterMatch[4] ? parseInt(chapterMatch[4], 10) : undefined;
-              const subChapter = chapterMatch[6] ? parseInt(chapterMatch[6], 10) : undefined;
+              const chapter = chapterMatch[3] ? parseFloat(chapterMatch[3]) : undefined;
               chapters.push({
                 chapter: (chapter),
                 name: (name),
                 source: (location),
-                subChapter: (subChapter),
                 volume: (volume),
               });
               return chapters;
