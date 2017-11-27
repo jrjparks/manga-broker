@@ -145,7 +145,7 @@ describe("KissManga Tests", function() {
     it("should return pages for 'Onepunch-Man' 'Chapter 1'", () => {
       const source: ISource = {
         name: "Onepunch-Man _vol.001 ch.001",
-        source: new URL("http://kissmanga.com/Manga/Onepunch-Man/vol-001-ch-001?id=313725"),
+        source: new URL("http://kissmanga.com/Manga/Onepunch-Man/Punch-001?id=369844"),
       };
       if (local) {
         const get = sandbox.stub(cloudkicker, "get");
@@ -154,7 +154,7 @@ describe("KissManga Tests", function() {
         get.withArgs(sinon.match({ href: "http://kissmanga.com/Scripts/lo.js" }))
           .resolves({ response: { body: utils.getFixture("KissManga/lo.js") } });
         get.withArgs(sinon.match({ href: (source.source.href) }))
-          .resolves({ response: { body: utils.getFixture("KissManga/Onepunch-Man-vol-001-ch-001.html") } });
+          .resolves({ response: { body: utils.getFixture("KissManga/Onepunch-Man-001.html") } });
       }
       return kissmanga.pages(source)
         .then((pages) => {
@@ -163,7 +163,7 @@ describe("KissManga Tests", function() {
           const page = pages[0];
           expect(page).to.be.ok;
           expect(page.name).to.be.ok;
-          expect(page.name).to.be.equal("1.jpg");
+          expect(page.name).to.be.equal("0001-001.png");
           expect(page.source).to.be.ok;
         });
     });

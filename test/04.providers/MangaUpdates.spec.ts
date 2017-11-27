@@ -15,15 +15,15 @@ import * as utils from "../utils";
 describe("MangaUpdates Tests", function() {
   this.retries(2);
   const cloudkicker: CloudKicker = new CloudKicker();
-  const mangaupdates = new MangaUpdates(cloudkicker);
+  const provider = new MangaUpdates(cloudkicker);
   let sandbox: sinon.SinonSandbox;
   let clock: sinon.SinonFakeTimers;
 
-  utils.providerBadSourceHostTests(mangaupdates);
+  utils.providerBadSourceHostTests(provider);
 
   const generateTests = (local: boolean = true) => {
 
-    it("should return search results for 'One Punch-Man'", () => {
+    it("should return search results for 'One Punch Man'", () => {
       if (local) {
         sandbox.stub(cloudkicker, "get")
           .resolves({
@@ -32,8 +32,8 @@ describe("MangaUpdates Tests", function() {
             },
           });
       }
-      return mangaupdates.search("One Punch-Man")
-        .then(({results}) => {
+      return provider.search("One Punch Man")
+        .then(({ results }) => {
           expect(results).to.be.ok;
           expect(results).to.have.length.above(2);
           const result: IDetails = results[0];
@@ -47,15 +47,12 @@ describe("MangaUpdates Tests", function() {
           }
           expect(result.about.genres).to.be.ok;
           expect(result.about.genres).to.have.members([
-            Genre.Action,
-            Genre.Comedy,
-            Genre.Fantasy,
-            Genre.Mature,
+            Genre.Action, Genre.Comedy, Genre.Drama, Genre.Scifi, Genre.Seinen
           ]);
         });
     });
 
-    it("should return find results for 'One Punch-Man' from cache", () => {
+    it("should return find results for 'One Punch Man' from cache", () => {
       if (local) {
         sandbox.stub(cloudkicker, "get")
           .resolves({
@@ -64,11 +61,12 @@ describe("MangaUpdates Tests", function() {
             },
           });
       }
-      return mangaupdates.find("One Punch-Man")
+      return provider.find("One Punch Man")
         .then((result) => {
           expect(result).to.be.ok;
           expect(result.name).to.be.ok;
-          expect(result.name).to.be.equal("One Punch-Man");
+          ["One", "Punch", "Man"
+          ].forEach((name_part) => expect(result.name).to.contain(name_part));
           expect(result.source).to.be.ok;
           expect(result.source.href).to.be.equal("https://www.mangaupdates.com/series.html?id=80345");
         });
@@ -83,7 +81,7 @@ describe("MangaUpdates Tests", function() {
             },
           });
       }
-      return mangaupdates.find("Blah Blah")
+      return provider.find("Blah Blah")
         .then(utils.unexpectedPromise)
         .catch((error: Error) => {
           expect(error).to.be.ok;
@@ -105,7 +103,7 @@ describe("MangaUpdates Tests", function() {
           name: "Test Details",
           source: new URL(`https://www.mangaupdates.com/series.html?id=${id}`),
         };
-        return mangaupdates.details(source)
+        return provider.details(source)
           .then((details) => {
             expect(details).to.be.ok;
             expect(details.name).to.be.ok;
@@ -117,7 +115,7 @@ describe("MangaUpdates Tests", function() {
   describe("Local File Tests", () => {
     before(() => {
       cloudkicker.clearCookieJar();
-      mangaupdates.clearCache();
+      provider.clearCache();
     });
     beforeEach("set-up", () => {
       sandbox = sinon.sandbox.create();
@@ -139,7 +137,7 @@ describe("MangaUpdates Tests", function() {
       this.retries(3);
       before(() => {
         cloudkicker.clearCookieJar();
-        mangaupdates.clearCache();
+        provider.clearCache();
       });
       generateTests(false);
     }

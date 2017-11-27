@@ -126,7 +126,7 @@ describe("NovelUpdates Tests", function() {
           "Heroes", "Human-Nonhuman Relationship", "Hunters", "Kingdoms",
           "Level System", "Male Protagonist", "Merchants", "Monsters", "Nobles",
           "Overpowered Protagonist", "Saving the World", "Sword And Magic",
-          "Thieves", "Weak to Strong", "Wizards",
+          "Thieves", "Wizards",
         ],
         description: (desc: string) => {
           expect(desc).to.include("In this world, the concept of");

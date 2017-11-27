@@ -40,16 +40,17 @@ describe("MangaPark Tests", function() {
     [{
       fixture: "MangaPark/search_onepunch_man.html",
       genres: [Genre.Action],
-      href: "https://mangapark.me/search?q=One+Punch-Man&page=1&genres=action",
+      href: "https://mangapark.me/search?q={title}&page=1&genres=action",
       results: [{
         name: "Onepunch-Man",
         source: new URL("/manga/onepunch-man", provider.baseURL),
       }, {
-          name: "Onepunch-Man (ONE)",
-          source: new URL("/manga/onepunch-man-one-1", provider.baseURL),
-        }],
-      title: "One Punch-Man",
-    }].forEach(({fixture, genres, href, results, title}) => {
+        name: "Onepunch-Man (ONE)",
+        source: new URL("/manga/onepunch-man-one-1", provider.baseURL),
+      }],
+      title: "Onepunch-Man",
+    }].forEach(({ fixture, genres, href, results, title }) => {
+      href = href.replace("{title}", title);
       results.forEach((result) => {
         it(`should find ${result.name}`, () => {
           if (local) {
@@ -75,19 +76,20 @@ describe("MangaPark Tests", function() {
         }
         return provider.search(title, {
           genres: (genres),
-        }).then((searchResults) => {
-          expect(searchResults).to.be.ok;
-          expect(searchResults.hasNextPage).to.be.false;
-          expect(searchResults.hasPreviousPage).to.be.false;
-          expect(searchResults.options).to.be.ok;
-          expect(searchResults.page).to.be.equal(1);
+        })
+          .then((searchResults) => {
+            expect(searchResults).to.be.ok;
+            expect(searchResults.hasNextPage).to.be.false;
+            expect(searchResults.hasPreviousPage).to.be.false;
+            expect(searchResults.options).to.be.ok;
+            expect(searchResults.page).to.be.equal(1);
 
-          expect(searchResults.results).to.be.ok;
-          expect(searchResults.results).to.have.lengthOf.at.least(results.length);
-          for (const result of results) {
-            expect(searchResults.results).to.deep.include(result);
-          }
-        });
+            expect(searchResults.results).to.be.ok;
+            expect(searchResults.results).to.have.lengthOf.at.least(results.length);
+            for (const result of results) {
+              expect(searchResults.results).to.deep.include(result);
+            }
+          });
       });
 
       results.forEach((result) => {
@@ -117,7 +119,7 @@ describe("MangaPark Tests", function() {
         name: "Onepunch-Man",
         source: new URL("https://mangapark.me/manga/onepunch-man"),
       },
-    }].forEach(({fixture, genres, source}) => {
+    }].forEach(({ fixture, genres, source }) => {
       it(`should get details for ${source.name}`, () => {
         if (local) {
           const get = sandbox.stub(cloudkicker, "get");

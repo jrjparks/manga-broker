@@ -54,6 +54,14 @@ describe("ValueMapper Tests", () => {
     mapper.add("A", 0).add("B", 1);
     expect(mapper.containsKey("A")).to.be.ok;
     expect(mapper.containsValue(0)).to.be.ok;
+    expect(mapper.toValue("A")).to.equal(0);
+    expect(mapper.containsKey("B")).to.be.ok;
+    expect(mapper.containsValue(1)).to.be.ok;
+    expect(mapper.toValue("B")).to.equal(1);
+    mapper.add("A", 2);
+    expect(mapper.containsKey("A")).to.be.ok;
+    expect(mapper.containsValue(2)).to.be.ok;
+    expect(mapper.toValue("A")).to.equal(2);
     done();
   });
 
