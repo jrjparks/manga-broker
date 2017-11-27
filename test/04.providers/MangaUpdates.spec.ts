@@ -46,7 +46,12 @@ describe("MangaUpdates Tests", function() {
             throw new Error("about.genres is not defined");
           }
           expect(result.about.genres).to.be.ok;
-          expect(result.about.genres).to.have.members([Genre.Action, Genre.Comedy, Genre.Fantasy, Genre.Mature]);
+          expect(result.about.genres).to.have.members([
+            Genre.Action,
+            Genre.Comedy,
+            Genre.Fantasy,
+            Genre.Mature,
+          ]);
         });
     });
 
