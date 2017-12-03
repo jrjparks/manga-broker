@@ -50,10 +50,10 @@
   },
   "homepage": "https://github.com/jrjparks/manga-broker#readme",
   "devDependencies": {
-    "@types/chai": "^4.0.4",
+    "@types/chai": "^4.0.6",
     "@types/mocha": "^2.2.44",
-    "@types/node": "^8.0.47",
-    "@types/sinon": "^2.3.7",
+    "@types/node": "^8.0.53",
+    "@types/sinon": "^4.0.0",
     "chai": "^4.1.2",
     "coveralls": "^3.0.0",
     "gulp": "^3.9.1",
@@ -65,17 +65,17 @@
     "mocha": "^4.0.1",
     "mocha-typescript": "^1.1.12",
     "nyc": "^11.3.0",
-    "sinon": "^4.0.2",
+    "sinon": "^4.1.2",
     "source-map-support": "^0.5.0",
     "ts-node": "^3.3.0",
     "tslint": "^5.8.0",
-    "typescript": "^2.5.3"
+    "typescript": "^2.6.2"
   },
   "dependencies": {
-    "@types/cheerio": "^0.22.4",
-    "@types/lodash": "^4.14.80",
+    "@types/cheerio": "^0.22.6",
+    "@types/lodash": "^4.14.86",
     "cheerio": "1.0.0-rc.2",
-    "cloudkicker": "^1.0.12",
+    "cloudkicker": "^1.0.13",
     "lodash": "^4.17.4"
   }
 }
