@@ -81,7 +81,11 @@ export class MangaUpdates extends ProviderCore implements IProvider {
     };
     const queryURL = new URL(this.baseURL.href);
     queryURL.pathname = "/series.html";
-    _.mapKeys(searchParams, (value, key) => queryURL.searchParams.set(key, value));
+    _.forOwn(searchParams, (value, key) => {
+      if (value) {
+        queryURL.searchParams.set(key.toString(), value.toString());
+      }
+    });
 
     const {response} = await this.cloudkicker.get(queryURL, { Referer: queryURL.href });
     const $ = cheerio.load(response.body);

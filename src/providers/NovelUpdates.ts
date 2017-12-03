@@ -208,7 +208,10 @@ export class NovelUpdates extends ProviderCore implements IAuthentableProvider {
           ].join(" > ")).text().trim();
 
           const associatedNamesNode = $("#editassociated");
-          associatedNamesNode.html(associatedNamesNode.html().replace("<br>", "__BR__"));
+          const associatedNamesHtml: string | null = associatedNamesNode.html();
+          if (typeof associatedNamesHtml === "string") {
+            associatedNamesNode.html(associatedNamesHtml.replace("<br>", "__BR__"));
+          }
           const associatedNames: ISource[] = associatedNamesNode.text().split("__BR__")
             .map((associatedName) => associatedName.trim())
             .map((associatedName) => {

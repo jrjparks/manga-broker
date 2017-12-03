@@ -90,12 +90,12 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
         section: "login",
       }, (value: string, key: string) => authURL.searchParams.set(key, value));
       const authData: string = _.transform({
-        anonymous: 1,
+        anonymous: "1",
         auth_key: AUTH_KEY,
         ips_password: (password),
         ips_username: (username),
         referer: this.baseURL.href,
-        rememberMe: 1,
+        rememberMe: "1",
       }, (result, value, key) => {
         result.push([key, value].map(encodeURIComponent).join("="));
         return result;
@@ -105,7 +105,7 @@ export class Batoto extends ProviderCore implements ISourceProvider, IAuthentabl
       if (/username or password incorrect/i.test(authRequest.response.body.toString())) {
         throw ProviderErrors.AUTHENTICATION_INCORRECT;
       }
-      return await this.cloudkicker.get(new URL("/forums", this.baseURL), { Referer: this.baseURL })
+      return await this.cloudkicker.get(this.baseURL, { Referer: this.baseURL })
         .then(({response}) => {
           const usernameMatch = new RegExp(`Welcome,\\s${username}`);
           const cookies: string = this.cloudkicker.cookieJar.getCookieString(this.baseURL);

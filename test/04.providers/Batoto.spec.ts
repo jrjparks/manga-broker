@@ -1,8 +1,8 @@
 /* tslint:disable:no-string-literal */
 /// <reference types="mocha"/>
-import _ = require("lodash");
 import { expect } from "chai";
 import { CloudKicker } from "cloudkicker";
+import _ = require("lodash");
 import * as request from "request";
 import * as sinon from "sinon";
 import { URL } from "url";
@@ -27,6 +27,7 @@ describe("Batoto Tests", () => {
   const noauthResponse = { response: { body: utils.getFixture("Batoto/forums.noauth.html") } };
 
   const handleAuth = (get: sinon.SinonStub, post: sinon.SinonStub) => {
+    get.withArgs(sinon.match({ href: provider.baseURL.href })).resolves(authResponse);
     get.withArgs(sinon.match({ href: "https://bato.to/forums" })).resolves(authResponse);
     post.withArgs(sinon.match({
       href: "https://bato.to/forums/index.php?app=core&do=process&module=global&section=login",
@@ -77,6 +78,24 @@ describe("Batoto Tests", () => {
   const generateTests = (local: boolean = true) => {
     before(function() {
       if (!username || !password) { this.skip(); }
+    });
+
+    it("should test connection.", () => {
+      if (local) {
+        const get = sandbox.stub(cloudkicker, "get");
+        get.withArgs(sinon.match({ href: provider.baseURL.href }))
+          .resolves(noauthResponse);
+      }
+      return cloudkicker.get(provider.baseURL)
+        .then(({response}) => {
+          expect(response).to.be.ok;
+          expect(response.body).to.be.ok;
+          expect(/ipb_common/.test(response.body)).to.be.ok;
+          expect(/880ea6a14ea49e853634fbdc5015a024/.test(response.body)).to.be.ok;
+        })
+        .catch((error) => {
+          throw error;
+        });
     });
 
     it("should fail to authenticate empty username:password", () => {
@@ -131,6 +150,8 @@ describe("Batoto Tests", () => {
           expect(cookies).to.match(/member_id=\d+?/);
           expect(cookies).to.match(/pass_hash=\w+?/);
           expect(cookies).to.match(/session_id=\w+?/);
+        }).catch((err) => {
+          throw err;
         });
     });
 
@@ -320,7 +341,21 @@ describe("Batoto Tests", () => {
 
   };
 
-  describe("Local File Tests", () => generateTests(true));
+  describe("Local File Tests", () => {
+    before(() => {
+      cloudkicker.clearCookieJar();
+      provider.clearCache();
+    });
+    beforeEach("set-up", () => {
+      sandbox = sinon.sandbox.create();
+      clock = sinon.useFakeTimers();
+    });
+    afterEach("tear-down", () => {
+      sandbox.restore();
+      clock.restore();
+    });
+    generateTests(true);
+  });
 
   describe("Remote Live Tests", function() {
     if (utils.CI) {
@@ -332,6 +367,8 @@ describe("Batoto Tests", () => {
       before(() => {
         cloudkicker.clearCookieJar();
         provider.clearCache();
+        sandbox.restore();
+        clock.restore();
       });
       generateTests(false);
     }

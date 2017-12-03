@@ -120,9 +120,10 @@ export class MangaStream extends ProviderCore implements ISourceProvider {
           const pageCount: number = parseInt(lastPageNumber, 10);
           // This is generating the image url based on the image url in the initial page.
           return _.range(1, pageCount + 1)
-            .map((page) => new URL(imageHref.replace(pageRegExp, (_1, path, _2, _3, _4, ext) => {
-              return `${path}${_.padStart(page.toString(), 2, "0")}.${ext}`;
-            })))
+            .map((page) => new URL(
+              imageHref.replace(
+                pageRegExp,
+                (_1, imgPath, _2, _3, _4, ext) => `${imgPath}${_.padStart(page.toString(), 2, "0")}.${ext}`)))
             .map(URL2ISource);
         } else {
           throw Error("Unable to locate image.");
