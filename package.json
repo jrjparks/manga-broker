@@ -8,11 +8,14 @@
     "test": "test"
   },
   "scripts": {
-    "build": "gulp rebuild:ts",
+    "build": "npm run clean && npm run compile",
+    "compile": "tsc",
+    "clean": "del-cli lib/**/*",
     "test": "nyc mocha",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "preversion": "npm test",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags",
+    "prepack": "npm run build"
   },
   "nyc": {
     "include": [
@@ -56,12 +59,7 @@
     "@types/sinon": "^4.0.0",
     "chai": "^4.1.2",
     "coveralls": "^3.0.0",
-    "gulp": "^3.9.1",
-    "gulp-clean": "^0.3.2",
-    "gulp-mocha": "^4.3.1",
-    "gulp-sequence": "^0.4.6",
-    "gulp-tslint": "^8.1.2",
-    "gulp-typescript": "^3.2.3",
+    "del-cli": "^1.1.0",
     "mocha": "^4.0.1",
     "mocha-typescript": "^1.1.12",
     "nyc": "^11.3.0",

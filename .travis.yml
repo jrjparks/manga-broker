@@ -9,7 +9,7 @@ jobs:
       script: npm test
       after_script: npm run coverage
     - stage: Release
-      script: "npm run build && npm pack"
+      script: "npm pack"
       deploy:
         - provider: releases
           file_glob: true
