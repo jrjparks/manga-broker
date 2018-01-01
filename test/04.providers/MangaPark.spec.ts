@@ -34,7 +34,7 @@ describe("MangaPark Tests", function() {
   });
 
   utils.providerBadSourceHostTests(provider);
-  // utils.providerNotAuthTests(provider, "https://www.novelupdates.com/#bad");
+  // utils.providerNotAuthTests(provider, "https://mangapark.me/#bad");
 
   const generateTests = (local: boolean = true) => {
     [{
@@ -43,7 +43,7 @@ describe("MangaPark Tests", function() {
       href: "https://mangapark.me/search?q={title}&page=1&genres=action",
       results: [{
         name: "Onepunch-Man",
-        source: new URL("/manga/onepunch-man", provider.baseURL),
+        source: new URL("/manga/onepunch-man-2", provider.baseURL),
       }, {
         name: "Onepunch-Man (ONE)",
         source: new URL("/manga/onepunch-man-one-1", provider.baseURL),

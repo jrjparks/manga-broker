@@ -191,15 +191,11 @@ export class MangaUpdates extends ProviderCore implements IProvider {
 
       // Associated Names
       const associatedNamesNode = contentNode.find("div:nth-child(3) > div > div:nth-child(11)");
-      const associatedNames: ISource[] = associatedNamesNode.children().toArray()
-        .map((node) => {
-          const element = $(node);
-          const associatedName = element.text().trim();
-          const location = new URL(this.baseURL.href);
-          location.pathname = element.attr("href");
+      const associatedNames: ISource[] = (associatedNamesNode.html() || "").split("<br>")
+        .map((title) => {
           return {
-            name: (associatedName),
-            source: (location),
+            name: (title),
+            source: (source.source),
           };
         });
 
