@@ -24,21 +24,6 @@ describe("NovelUpdates Tests", function() {
   const username = process.env["NOVELUPDATES-TEST-USER"] || "testuser";
   const password = process.env["NOVELUPDATES-TEST-PASS"] || "testuser";
 
-  before(() => {
-    cloudkicker.clearCookieJar();
-    provider.clearCache();
-  });
-  beforeEach("set-up", () => {
-    sandbox = sinon.sandbox.create();
-    clock = sinon.useFakeTimers();
-  });
-  afterEach("tear-down", () => {
-    provider.deauthenticate();
-    cloudkicker.clearCookieJar();
-    sandbox.restore();
-    clock.restore();
-  });
-
   const authResponse = {
     response: {
       body: utils.getFixture("NovelUpdates/auth.html").toString().replace("%USERNAME%", username),
@@ -48,6 +33,7 @@ describe("NovelUpdates Tests", function() {
 
   const handleAuth = (get: sinon.SinonStub, post: sinon.SinonStub) => {
     get.withArgs(sinon.match({ href: "https://www.novelupdates.com/" })).resolves(authResponse);
+    get.withArgs(sinon.match({ href: "https://www.novelupdates.com/login/" })).resolves(authResponse);
     post.withArgs(sinon.match({ href: "https://www.novelupdates.com/login/" })).resolves(authResponse);
     [ // Set cookies
       `wordpress_logged_in_d41d8cd98f00b204e9800998ecf8427e=${username}%0a0000000000%0aaaaaaaa0aaaaaaaaaaaaaaaaaaa0a0aaaaa0aaaaaaa%0a000aaa0a000a000a00a00a000000a000000a00000000a00a00a000000aa0000a`,
@@ -104,7 +90,7 @@ describe("NovelUpdates Tests", function() {
         });
     });
 
-    it("should authenticate username:password", () => {
+    it(`should authenticate username:password ${username}`, () => {
       if (local) {
         const get = sandbox.stub(cloudkicker, "get");
         const post = sandbox.stub(cloudkicker, "post");
@@ -281,7 +267,23 @@ describe("NovelUpdates Tests", function() {
     });
   };
 
-  describe("Local File Tests", () => generateTests(true));
+  describe("Local File Tests", () => {
+    before(() => {
+      cloudkicker.clearCookieJar();
+      provider.clearCache();
+    });
+    beforeEach("set-up", () => {
+      sandbox = sinon.sandbox.create();
+      clock = sinon.useFakeTimers();
+    });
+    afterEach("tear-down", () => {
+      provider.deauthenticate();
+      cloudkicker.clearCookieJar();
+      sandbox.restore();
+      clock.restore();
+    });
+    generateTests(true);
+  });
 
   describe("Remote Live Tests", function() {
     if (utils.CI) {

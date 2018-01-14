@@ -1,6 +1,6 @@
 import cheerio = require("cheerio");
 import _ = require("lodash");
-// import path = require("path");
+import path = require("path");
 import { URL } from "url";
 
 import {
@@ -200,7 +200,11 @@ export class MangaPark extends ProviderCore implements ISourceProvider {
       const coverNode = $(coverSelector);
       const covers: ICover[] = [];
       if (coverNode.length === 1) {
-        const coverLocation = new URL(coverNode.attr("src"));
+        let coverSrc: string = coverNode.attr("src");
+        if (coverSrc.startsWith("//")) {
+          coverSrc = `${source.source.protocol}${coverSrc}`;
+        }
+        const coverLocation = new URL(coverSrc);
         covers.push({
           MIME: "image/jpeg",
           Thumbnail: (coverLocation),
@@ -233,7 +237,32 @@ export class MangaPark extends ProviderCore implements ISourceProvider {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(ProviderErrors.INCORRECT_SOURCE);
     } else {
-      return [];
+      return this.cloudkicker.get(source.source, { Referer: source.source.href })
+        .then(({response}) => {
+          const $ = cheerio.load(response.body);
+          const selector = [
+            "body", "section.manga", "div.content", "div#list.book-list",
+            "div.stream:not(.collapsed)", "div.volume", "ul.chapter", "li",
+            "span",
+          ].join(" > ");
+          const nodes = $(selector);
+          return nodes.toArray().reduce((chapters, node) => {
+            const element = $(node);
+            const nameParts: string[] = element.text()
+              .replace(/^ch\./, "Chapter ").split(":")
+              .map((str) => str.trim()).filter((str) => !!(str));
+            const name: string = _.last(nameParts) as string;
+            const location = new URL(element.find("a.ch").attr("href"), this.baseURL.href);
+            const chapterMatch: RegExpMatchArray | null = (_.first(nameParts) as string).match(/[\d.]+/);
+            const chapter = chapterMatch ? parseFloat(chapterMatch[0]) : undefined;
+            chapters.push({
+              chapter: (chapter),
+              name: (name),
+              source: (location),
+            });
+            return chapters;
+          }, new Array<IChapter>()).reverse();
+        });
     }
   }
 
@@ -241,7 +270,25 @@ export class MangaPark extends ProviderCore implements ISourceProvider {
     if (source.source.host !== this.baseURL.host) {
       return Promise.reject(ProviderErrors.INCORRECT_SOURCE);
     } else {
-      return [];
+      if (/\/\d+$/.test(source.source.pathname)) {
+        source.source = new URL(source.source.href.replace(/(.*)\/\d+$/, "$1"));
+      }
+      return this.cloudkicker.get(source.source, { Referer: source.source.href })
+        .then(({response}) => {
+          const $ = cheerio.load(response.body);
+          return $("img[id^='img-']").toArray()
+            .map((node, index) => {
+              let src: string = $(node).attr("src");
+              if (src.startsWith("//")) {
+                src = `${source.source.protocol}${src}`;
+              }
+              const ext: string = path.extname(src);
+              return {
+                name: `page_${index}${ext}`,
+                source: new URL(src),
+              } as ISource;
+            });
+        });
     }
   }
 

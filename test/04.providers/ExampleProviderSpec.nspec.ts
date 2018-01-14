@@ -2,10 +2,17 @@
 /// <reference types="mocha"/>
 import { expect } from "chai";
 import { CloudKicker } from "cloudkicker";
+import * as request from "request";
 import * as sinon from "sinon";
-// import { URL } from "url";
-import { ISource } from "../../src/models/source";
-import { ProviderCore } from "../../src/provider";
+import { URL } from "url";
+import {
+  Genre,
+  ISource,
+} from "../../src/models";
+import {
+  isAuthentableProvider,
+  MangaUpdates as ProviderCore, // Replace this with the real provider. Update 'is' test too.
+} from "../../src/providers";
 import * as utils from "../utils";
 
 describe("ProviderCore Tests", function() {
@@ -15,23 +22,32 @@ describe("ProviderCore Tests", function() {
   let sandbox: sinon.SinonSandbox;
   let clock: sinon.SinonFakeTimers;
 
-  beforeEach("set-up", () => {
-    sandbox = sinon.sandbox.create();
-    clock = sinon.useFakeTimers();
-  });
-  afterEach("tear-down", () => {
-    sandbox.restore();
-    clock.restore();
-  });
-
   it("should return is", (done) => {
-    expect(provider.is).to.be.equal("ProviderCore");
+    expect(provider.is).to.be.equal("ProviderCore"); // Update this.
     done();
   });
 
   const generateTests = (local: boolean = true) => undefined;
 
-  describe("Local File Tests", () => generateTests(true));
+  describe("Local File Tests", () => {
+    before(() => {
+      cloudkicker.clearCookieJar();
+      provider.clearCache();
+    });
+    beforeEach("set-up", () => {
+      sandbox = sinon.sandbox.create();
+      clock = sinon.useFakeTimers();
+    });
+    afterEach("tear-down", () => {
+      if (isAuthentableProvider(provider)) {
+        provider.deauthenticate();
+      }
+      cloudkicker.clearCookieJar();
+      sandbox.restore();
+      clock.restore();
+    });
+    generateTests(true);
+  });
 
   describe("Remote Live Tests", function() {
     if (utils.CI) {

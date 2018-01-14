@@ -97,33 +97,31 @@ export class NovelUpdates extends ProviderCore implements IAuthentableProvider {
         return result;
       }, new Array<string>()).join("&");
       this.authenticated = false;
-      try {
-        const authRequest = await this.cloudkicker.post(authURL, authData, { Referer: this.baseURL });
+      return this.cloudkicker.post(authURL, authData, { Referer: this.baseURL })
+      .then(({response}) => {
         if (/\:\s(invalid\susername|the\spassword\syou\sentered\sfor\sthe\susername)/i
-          .test(authRequest.response.body.toString())) {
-          throw new Error("Your username or password was incorrect.");
+          .test(response.body.toString())) {
+          return Promise.reject(new Error("Your username or password was incorrect."));
         }
-      } catch (error) { // TODO: Fix this hack
-        if (error.message !== "body is undefined") { throw error; }
-      }
-      return await this.cloudkicker.get(this.baseURL, { Referer: this.baseURL })
-        .then(({response}) => {
-          const usernameMatch = new RegExp(`Welcome back,\\s\\<a.*?\\>${username}\\<\\/a\\>!`);
-          const cookies: string = this.cloudkicker.cookieJar.getCookieString(this.baseURL);
-          const body: string = response.body.toString();
-          this.authenticated = [
-            new RegExp(`wordpress_logged_in_[\\w\\_]+?=${username}[\\w\\%]`),
-            new RegExp(`wordpress_\\w+?=${username}[\\w\\%]`),
-          ].reduce((status: boolean, regexp: RegExp) => {
-            const test = regexp.test(cookies);
-            return status && test;
-          }, true)
-            && usernameMatch.test(body);
-          if (!this.authenticated) { throw new Error("Unable to authenticate."); }
-          const secKey: RegExpMatchArray = body.match(/\/logout\/\?_wpnonce\=(\w+)/) as RegExpMatchArray;
-          this.secureKey = secKey ? secKey[1] : "";
-          return this;
-        });
+        return this.cloudkicker.get(this.baseURL, { Referer: this.baseURL });
+      })
+      .then(({response}) => {
+        const usernameMatch = new RegExp(`Welcome back,\\s\\<a.*?\\>${username}\\<\\/a\\>!`);
+        const cookies: string = this.cloudkicker.cookieJar.getCookieString(this.baseURL);
+        const body: string = response.body.toString();
+        this.authenticated = [
+          new RegExp(`wordpress_logged_in_[\\w\\_]+?=${username}[\\w\\%]`),
+          new RegExp(`wordpress_\\w+?=${username}[\\w\\%]`),
+        ].reduce((status: boolean, regexp: RegExp) => {
+          const test = regexp.test(cookies);
+          return status && test;
+        }, true)
+          && usernameMatch.test(body);
+        if (!this.authenticated) { throw new Error("Unable to authenticate."); }
+        const secKey: RegExpMatchArray = body.match(/\/logout\/\?_wpnonce\=(\w+)/) as RegExpMatchArray;
+        this.secureKey = secKey ? secKey[1] : "";
+        return this;
+      });
     }
   }
 

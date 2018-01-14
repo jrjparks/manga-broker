@@ -112,12 +112,12 @@ describe("MangaPark Tests", function() {
     [{
       fixture: "MangaPark/onepunch-man.html",
       genres: [
-        Genre.Action, Genre.Comedy, Genre.MartialArts, Genre.Seinen,
-        Genre.Shounen, Genre.Supernatural,
+        Genre.Action, Genre.Comedy, Genre.MartialArts,
+        Genre.Seinen, Genre.Shounen, Genre.Supernatural,
       ],
       source: {
         name: "Onepunch-Man",
-        source: new URL("https://mangapark.me/manga/onepunch-man"),
+        source: new URL("https://mangapark.me/manga/onepunch-man-2"),
       },
     }].forEach(({ fixture, genres, source }) => {
       it(`should get details for ${source.name}`, () => {
@@ -138,6 +138,57 @@ describe("MangaPark Tests", function() {
             expect(details.about.genres).to.be.ok;
             for (const genre of genres) {
               expect(details.about.genres).to.include(genre);
+            }
+          });
+      });
+
+      it(`should get chapters for ${source.name}`, () => {
+        if (local) {
+          const get = sandbox.stub(cloudkicker, "get");
+          // const post = sandbox.stub(cloudkicker, "post");
+          get.withArgs(sinon.match({ href: (source.source.href) }))
+            .resolves({ response: { body: utils.getFixture(fixture) } });
+        }
+        return provider.chapters(source)
+          .then((chapters) => {
+            expect(chapters).to.be.ok;
+            expect(chapters).to.be.length.above(0);
+            const chapter = chapters[0];
+            expect(chapter.name).to.be.ok;
+            expect(chapter.source).to.be.ok;
+            expect(chapter.chapter).to.be.ok;
+            expect(chapter.chapter).to.be.above(0);
+          });
+      });
+    });
+
+    [{
+       fixture: "MangaPark/onepunch-man_c1.html",
+       source: {
+         name: "Onepunch-Man Chapter 1",
+         source: new URL("https://mangapark.me/manga/onepunch-man/s1/v1/c1"),
+       },
+    }, {
+       fixture: "MangaPark/onepunch-man_c84.html",
+       source: {
+         name: "Onepunch-Man Chapter 84",
+         source: new URL("https://mangapark.me/manga/onepunch-man/s1/c084/1"),
+       },
+    }].forEach(({fixture, source}) => {
+      it(`should get list of pages for ${source.name}`, () => {
+        if (local) {
+          const get = sandbox.stub(cloudkicker, "get");
+          // const post = sandbox.stub(cloudkicker, "post");
+          get.withArgs(sinon.match({ href: (source.source.href) }))
+            .resolves({ response: { body: utils.getFixture(fixture) } });
+        }
+        return provider.pages(source)
+          .then((pages) => {
+            expect(pages).to.be.ok;
+            expect(pages).to.be.length.above(0);
+            for (const page of pages) {
+              expect(page.name).to.be.ok;
+              expect(page.source).to.be.ok;
             }
           });
       });

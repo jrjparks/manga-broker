@@ -14,8 +14,7 @@ export { EasyGoingScans } from "./EasyGoingScans";
 export { KissManga } from "./KissManga";
 export { MangaPanda } from "./MangaPanda";
 export { MangaReader } from "./MangaReader";
-// export { MangaPark } from "./MangaPark";
-// export { MangaTraders } from "./MangaTraders";
+export { MangaPark } from "./MangaPark";
 
 // Novel Providers
 export { NovelUpdates } from "./NovelUpdates";
