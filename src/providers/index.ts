@@ -10,7 +10,6 @@ export {
 } from "./provider";
 
 // Manga Providers
-export { Batoto } from "./Batoto";
 export { EasyGoingScans } from "./EasyGoingScans";
 export { KissManga } from "./KissManga";
 export { MangaPanda } from "./MangaPanda";
