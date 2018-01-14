@@ -1,8 +1,8 @@
 /* tslint:disable:no-string-literal max-line-length */
 /// <reference types="mocha"/>
-import _ = require("lodash");
 import { expect } from "chai";
 import { CloudKicker } from "cloudkicker";
+import _ = require("lodash");
 import * as sinon from "sinon";
 import { URL } from "url";
 
@@ -45,21 +45,6 @@ describe("MangaReader Tests", function() {
           expect(cacheResultValue.name).to.be.equal("OnePunch-Man (ONE)");
           expect(cacheResultValue.source).to.be.ok;
           expect(cacheResultValue.source.href).to.be.equal("http://www.mangareader.net/onepunch-man-one");
-        });
-    });
-
-    it("should fail find 'Knights & Magic'", function() {
-      this.timeout(5000);
-      this.slow(2000);
-      if (local) {
-        sandbox.stub(cloudkicker, "get")
-          .resolves({ response: { body: utils.getFixture("MangaReader/alphabetical.html") } });
-      }
-      return mangareader.find("Knights & Magic")
-        .then(utils.unexpectedPromise)
-        .catch((error) => {
-          expect(error).to.be.ok;
-          expect(error.message).to.be.contain("Title not found.");
         });
     });
 
